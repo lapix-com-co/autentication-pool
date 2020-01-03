@@ -45,7 +45,7 @@ func TestLocalAccountHandler_Register(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *InitializeAccountOutput
+		want    *CustomerAccount
 		wantErr bool
 	}{
 		{
@@ -65,7 +65,7 @@ func TestLocalAccountHandler_Register(t *testing.T) {
 				firstName:         "john",
 				lastName:          "doe",
 			},
-			want: &InitializeAccountOutput{
+			want: &CustomerAccount{
 				ID:        "customerID",
 				Email:     "example@google.com",
 				Name:      "john doe",

@@ -33,6 +33,7 @@ func (a AuthenticationPoolProvider) Authenticate(handler AccountRetriever, input
 	}
 
 	return &AuthenticateOutput{
+		Account:      account,
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
 	}, nil

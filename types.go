@@ -32,6 +32,7 @@ type AuthenticateInput struct {
 }
 
 type AuthenticateOutput struct {
+	Account      *CustomerAccount
 	AccessToken  *Token
 	RefreshToken *RefreshToken
 }
@@ -39,7 +40,7 @@ type AuthenticateOutput struct {
 type AccountRetriever interface {
 	// Retrieve returns the User from the provider
 	// and synchronize the account data.
-	Retrieve(input *InitializeAccountInput) (*InitializeAccountOutput, error)
+	Retrieve(input *InitializeAccountInput) (*CustomerAccount, error)
 }
 
 type InitializeAccountInput struct {
@@ -47,7 +48,7 @@ type InitializeAccountInput struct {
 	Secret string
 }
 
-type InitializeAccountOutput struct {
+type CustomerAccount struct {
 	ID            string
 	Email         string
 	EmailVerified bool
@@ -125,9 +126,9 @@ type ProviderWithStore interface {
 	// SignUp allows to Register a new User.
 	SignUp(input *SignUpInput) (*SignUpOutput, error)
 	// UpdatePassword updates the password to the given value.
-	UpdatePassword(input *UpdatePasswordInput) (*InitializeAccountOutput, error)
+	UpdatePassword(input *UpdatePasswordInput) (*CustomerAccount, error)
 	// ValidatedEmail mark the users as with validated email.
-	ValidatedEmail(input *ValidateEmailInput) (*InitializeAccountOutput, error)
+	ValidatedEmail(input *ValidateEmailInput) (*CustomerAccount, error)
 }
 
 type ValidateEmailInput struct {

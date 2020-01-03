@@ -39,7 +39,7 @@ type PasswordPolicy interface {
 	Message() string
 }
 
-func (g LocalProvider) UpdatePassword(input *UpdatePasswordInput) (*InitializeAccountOutput, error) {
+func (g LocalProvider) UpdatePassword(input *UpdatePasswordInput) (*CustomerAccount, error) {
 	user, err := g.api.User(input.Email)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (g LocalProvider) UpdatePassword(input *UpdatePasswordInput) (*InitializeAc
 		return nil, err
 	}
 
-	return &InitializeAccountOutput{
+	return &CustomerAccount{
 		ID:            user.ID,
 		Email:         user.Email,
 		EmailVerified: user.ValidatedAt != nil,
@@ -74,7 +74,7 @@ func (g LocalProvider) UpdatePassword(input *UpdatePasswordInput) (*InitializeAc
 	}, nil
 }
 
-func (g LocalProvider) ValidatedEmail(input *ValidateEmailInput) (*InitializeAccountOutput, error) {
+func (g LocalProvider) ValidatedEmail(input *ValidateEmailInput) (*CustomerAccount, error) {
 	user, err := g.api.User(input.Email)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (g LocalProvider) ValidatedEmail(input *ValidateEmailInput) (*InitializeAcc
 		return nil, err
 	}
 
-	return &InitializeAccountOutput{
+	return &CustomerAccount{
 		ID:            user.ID,
 		Email:         user.Email,
 		EmailVerified: user.ValidatedAt != nil,
