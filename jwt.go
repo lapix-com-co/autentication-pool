@@ -1,11 +1,11 @@
 package authentication_pool
 
 import (
-	"authentication-pool/random"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/lapix-com-co/authentication-pool/random"
 	"github.com/pascaldekloe/jwt"
 	"strings"
 	"time"
