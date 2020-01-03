@@ -13,13 +13,13 @@ func NewFacebookProvider() *FacebookProvider {
 }
 
 type facebookAPI interface {
-	GetUser(accessToken string) (*facebookUser, error)
+	GetUser(accessToken string) (*FacebookUser, error)
 }
 
 type handuFacebook struct{}
 
-func (h handuFacebook) GetUser(accessToken string) (user *facebookUser, err error) {
-	user = &facebookUser{}
+func (h handuFacebook) GetUser(accessToken string) (user *FacebookUser, err error) {
+	user = &FacebookUser{}
 
 	res, err := facebook.Get(
 		"/me?fields=id,picture{url},first_name,last_name,email",
@@ -37,7 +37,7 @@ func (h handuFacebook) GetUser(accessToken string) (user *facebookUser, err erro
 	return
 }
 
-type facebookUser struct {
+type FacebookUser struct {
 	ID        string
 	FirstName string
 	LastName  string

@@ -16,12 +16,12 @@ func NewGoogleProvider() *GoogleProvider {
 }
 
 type googleAPI interface {
-	GetUser(accessToken string) (*googleUser, error)
+	GetUser(accessToken string) (*GoogleUser, error)
 }
 
 type googlePeople struct{}
 
-func (h googlePeople) GetUser(accessToken string) (user *googleUser, err error) {
+func (h googlePeople) GetUser(accessToken string) (user *GoogleUser, err error) {
 	url := fmt.Sprintf("https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=%s", accessToken)
 	res, err := http.Get(url)
 
@@ -39,7 +39,7 @@ func (h googlePeople) GetUser(accessToken string) (user *googleUser, err error) 
 		return nil, fmt.Errorf("invalid response from server: %s", string(data))
 	}
 
-	user = &googleUser{}
+	user = &GoogleUser{}
 	if err = json.Unmarshal(data, user); err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (h googlePeople) GetUser(accessToken string) (user *googleUser, err error) 
 	return user, err
 }
 
-type googleUser struct {
+type GoogleUser struct {
 	ID        string `json:"sub"`
 	FirstName string `json:"given_name"`
 	LastName  string `json:"family_name"`

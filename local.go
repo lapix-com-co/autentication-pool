@@ -182,12 +182,12 @@ func (g LocalProvider) createHashedPassword(password string) (string, error) {
 
 type LocalAPI interface {
 	// User returns a User by it's email. If the User does not exists returns nil, nil
-	User(email string) (*localUser, error)
+	User(email string) (*LocalUser, error)
 	Register(input *RegisterInput) (*RegisterOutput, error)
 	Update(input *UpdateInput) error
 }
 
-type localUser struct {
+type LocalUser struct {
 	ID          string
 	Email       string
 	FirstName   string
@@ -196,7 +196,7 @@ type localUser struct {
 	ValidatedAt *time.Time
 }
 
-func (l *localUser) Name() string {
+func (l *LocalUser) Name() string {
 	return fmt.Sprintf("%s %s", l.FirstName, l.LastName)
 }
 

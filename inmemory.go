@@ -3,20 +3,20 @@ package authentication_pool
 import "time"
 
 type InMemoryLocalAPI struct {
-	emailSet    map[string]*localUser
-	idSet       map[string]*localUser
+	emailSet    map[string]*LocalUser
+	idSet       map[string]*LocalUser
 	idGenerator IDGenerator
 }
 
 func NewInMemoryLocalAPI(provider IDGenerator) *InMemoryLocalAPI {
 	return &InMemoryLocalAPI{
 		idGenerator: provider,
-		emailSet:    map[string]*localUser{},
-		idSet:       map[string]*localUser{},
+		emailSet:    map[string]*LocalUser{},
+		idSet:       map[string]*LocalUser{},
 	}
 }
 
-func (i InMemoryLocalAPI) User(email string) (*localUser, error) {
+func (i InMemoryLocalAPI) User(email string) (*LocalUser, error) {
 	if v, ok := i.emailSet[email]; ok {
 		return v, nil
 	}
@@ -28,7 +28,7 @@ func (i InMemoryLocalAPI) Register(input *RegisterInput) (*RegisterOutput, error
 		return nil, ErrDuplicatedEntityExists
 	}
 
-	user := &localUser{
+	user := &LocalUser{
 		ID:        i.idGenerator(),
 		Email:     input.Email,
 		FirstName: "",

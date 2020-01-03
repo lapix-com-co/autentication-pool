@@ -12,7 +12,7 @@ func Test_handuFacebook_GetUser(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *facebookUser
+		want    *FacebookUser
 		wantErr bool
 	}{
 		{
@@ -20,7 +20,7 @@ func Test_handuFacebook_GetUser(t *testing.T) {
 			args: args{
 				accessToken: "EAAhs5q2FmIgBALIu7bcEbtE8l1rbVH69Ukd4dmMCBF6QiQBzmOM29vStCgOQlzslWb5k24KJBCpPNGgYA1S9zI6BZA5ZCtKRckFNOWQLnHoZATNVWF5FtoubFVluoTYfLFfNwdsxUjHu38TrIdtRZCaR7JvZC0QRaDs6lmgLctfcsCleZCwwCP",
 			},
-			want: &facebookUser{
+			want: &FacebookUser{
 				ID:        "143090040460812",
 				FirstName: "Alejandro",
 				LastName:  "Rivera",

@@ -12,7 +12,7 @@ func Test_googlePeople_GetUser(t *testing.T) {
 	tests := []struct {
 		name     string
 		args     args
-		wantUser *googleUser
+		wantUser *GoogleUser
 		wantErr  bool
 	}{
 		{
