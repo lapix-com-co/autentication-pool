@@ -21,7 +21,7 @@ func TestLocalProvider_Validate(t *testing.T) {
 		applicationID   string
 		secret          string
 		passwordHandler passwordHandler
-		api             localAPI
+		api             LocalAPI
 	}
 	type args struct {
 		input *ValidationInput

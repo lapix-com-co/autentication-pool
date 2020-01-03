@@ -16,7 +16,7 @@ func Test_handuFacebook_GetUser(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "retrieves a user",
+			name: "retrieves a User",
 			args: args{
 				accessToken: "EAAhs5q2FmIgBALIu7bcEbtE8l1rbVH69Ukd4dmMCBF6QiQBzmOM29vStCgOQlzslWb5k24KJBCpPNGgYA1S9zI6BZA5ZCtKRckFNOWQLnHoZATNVWF5FtoubFVluoTYfLFfNwdsxUjHu38TrIdtRZCaR7JvZC0QRaDs6lmgLctfcsCleZCwwCP",
 			},

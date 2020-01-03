@@ -11,14 +11,14 @@ var ErrExpiredToken = errors.New("the given Token has expired")
 
 var ErrDisabledToken = errors.New("the given token has been revoked")
 
-var ErrDuplicatedEntityExists = errors.New("the given user already exists")
+var ErrDuplicatedEntityExists = errors.New("the given User already exists")
 
-var ErrNotFound = errors.New("the given user does not exists")
+var ErrNotFound = errors.New("the given User does not exists")
 
 type AuthenticationHandler interface {
-	// Authenticate finds a user by the credentials. If the given user is valid
+	// Authenticate finds a User by the credentials. If the given User is valid
 	// in the provider but does not exists in the application thus
-	// the federated account must be created. At the end the 
+	// the federated account must be created. At the end the
 	// access Token are created.
 	Authenticate(handler AccountRetriever, input *AuthenticateInput) (*AuthenticateOutput, error)
 	// Verify takes an access token and validates if it exists and is
@@ -37,7 +37,7 @@ type AuthenticateOutput struct {
 }
 
 type AccountRetriever interface {
-	// Retrieve returns the user from the provider
+	// Retrieve returns the User from the provider
 	// and synchronize the account data.
 	Retrieve(input *InitializeAccountInput) (*InitializeAccountOutput, error)
 }
@@ -93,7 +93,7 @@ type SynchronizeOutput struct {
 type Provider interface {
 	// Retrieve checks that the given credentials are correct.
 	// The provider validates the secret provided by the
-	// user, secret can ve a password, access Token, etc.
+	// User, secret can ve a password, access Token, etc.
 	Retrieve(input *ValidationInput) (*ValidationOutput, error)
 	// Name returns the provider name like, google, facebook, local.
 	Name() string
@@ -122,7 +122,7 @@ func NewValidationOutput(ID, firstName, lastName, email string, photo *string, v
 }
 
 type ProviderWithStore interface {
-	// SignUp allows to register a new user.
+	// SignUp allows to Register a new User.
 	SignUp(input *SignUpInput) (*SignUpOutput, error)
 	// UpdatePassword updates the password to the given value.
 	UpdatePassword(input *UpdatePasswordInput) (*InitializeAccountOutput, error)
@@ -147,7 +147,7 @@ type SignUpOutput struct {
 	ValidatedAt *time.Time
 }
 
-// LocalCustomerRegister handle the creation of the user in the local repository as a user. The 
+// LocalCustomerRegister handle the creation of the User in the local repository as a User. The
 // difference between LocalCustomerRegister and FederatedAccountRegister is that a LocalCustomer can
 // have many FederatedAccounts because you can be registered with facebook, google, with local credentials, etc.
 type LocalCustomerRegister interface {
@@ -182,7 +182,7 @@ type FindLocalAccountOutput struct {
 
 type FederatedAccountRegister interface {
 	Create(input *CreateFederatedAccountInput) (*CreateFederatedAccountOutput, error)
-	// Find retrieves a user by provider and user id. If the given user does not exists returns nil, nil.
+	// Find retrieves a User by provider and User id. If the given User does not exists returns nil, nil.
 	Find(input *FindFederatedAccountInput) (*FindFederatedAccountOutput, error)
 }
 
@@ -217,7 +217,7 @@ type CreateFederatedAccountOutput struct {
 }
 
 type TokenProvider interface {
-	// CreateToken retrieves a new Token based in the user properties.
+	// CreateToken retrieves a new Token based in the User properties.
 	CreateToken(input *CreateTokenInput) (*CreateTokenOutput, error)
 	// Refresh takes a refresh Token, the refreshed token and creates a new one if its valid.
 	Refresh(input *RefreshTokenInput) (*RefreshTokenOutput, error)

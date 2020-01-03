@@ -11,6 +11,10 @@ type GoogleProvider struct {
 	api googleAPI
 }
 
+func NewGoogleProvider() *GoogleProvider {
+	return &GoogleProvider{api: &googlePeople{}}
+}
+
 type googleAPI interface {
 	GetUser(accessToken string) (*googleUser, error)
 }

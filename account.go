@@ -11,8 +11,8 @@ func NewLocalAccountRetriever(provider Provider, synchronizeAccount AccountSynch
 	return &LocalAccountRetriever{provider: provider, synchronizeAccount: synchronizeAccount}
 }
 
-// Retrieve validates if the given credentials are valid for the provider, if the user is valid
-// created the given user account and the federated account.
+// Retrieve validates if the given credentials are valid for the provider, if the User is valid
+// created the given User account and the federated account.
 func (a LocalAccountRetriever) Retrieve(input *InitializeAccountInput) (*InitializeAccountOutput, error) {
 	validationResult, err := a.provider.Retrieve(NewValidationInput(input.Email, input.Secret))
 	if err != nil {

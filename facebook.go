@@ -8,6 +8,10 @@ type FacebookProvider struct {
 	api facebookAPI
 }
 
+func NewFacebookProvider() *FacebookProvider {
+	return &FacebookProvider{api: &handuFacebook{}}
+}
+
 type facebookAPI interface {
 	GetUser(accessToken string) (*facebookUser, error)
 }

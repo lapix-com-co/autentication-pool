@@ -16,14 +16,14 @@ func NewInMemoryLocalAPI(provider IDGenerator) *InMemoryLocalAPI {
 	}
 }
 
-func (i InMemoryLocalAPI) user(email string) (*localUser, error) {
+func (i InMemoryLocalAPI) User(email string) (*localUser, error) {
 	if v, ok := i.emailSet[email]; ok {
 		return v, nil
 	}
 	return nil, nil
 }
 
-func (i InMemoryLocalAPI) register(input *RegisterInput) (*RegisterOutput, error) {
+func (i InMemoryLocalAPI) Register(input *RegisterInput) (*RegisterOutput, error) {
 	if _, ok := i.emailSet[input.Email]; ok {
 		return nil, ErrDuplicatedEntityExists
 	}
@@ -52,7 +52,7 @@ func (i InMemoryLocalAPI) register(input *RegisterInput) (*RegisterOutput, error
 	}, nil
 }
 
-func (i InMemoryLocalAPI) update(input *UpdateInput) error {
+func (i InMemoryLocalAPI) Update(input *UpdateInput) error {
 	if user, ok := i.idSet[input.ID]; !ok {
 		return ErrNotFound
 	} else {

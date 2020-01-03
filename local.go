@@ -13,13 +13,13 @@ var _ passwordHandler = &BCRYPTHandler{}
 
 type LocalProvider struct {
 	alias          string
-	api            localAPI
+	api            LocalAPI
 	passwordPolicy PasswordPolicy
 	passwordCypher passwordHandler
 	timeProvider   timeProvider
 }
 
-func NewLocalProvider(api localAPI) *LocalProvider {
+func NewLocalProvider(api LocalAPI) *LocalProvider {
 	return &LocalProvider{
 		alias:          "local",
 		api:            api,
@@ -40,12 +40,12 @@ type PasswordPolicy interface {
 }
 
 func (g LocalProvider) UpdatePassword(input *UpdatePasswordInput) (*InitializeAccountOutput, error) {
-	user, err := g.api.user(input.Email)
+	user, err := g.api.User(input.Email)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return nil, NewValidationInputFailed("the given user does not exists")
+		return nil, NewValidationInputFailed("the given User does not exists")
 	}
 
 	password, err := g.createHashedPassword(input.Password)
@@ -53,7 +53,7 @@ func (g LocalProvider) UpdatePassword(input *UpdatePasswordInput) (*InitializeAc
 		return nil, err
 	}
 
-	err = g.api.update(&UpdateInput{
+	err = g.api.Update(&UpdateInput{
 		ID:          user.ID,
 		Password:    &password,
 		ValidatedAt: user.ValidatedAt,
@@ -75,16 +75,16 @@ func (g LocalProvider) UpdatePassword(input *UpdatePasswordInput) (*InitializeAc
 }
 
 func (g LocalProvider) ValidatedEmail(input *ValidateEmailInput) (*InitializeAccountOutput, error) {
-	user, err := g.api.user(input.Email)
+	user, err := g.api.User(input.Email)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return nil, NewValidationInputFailed("the given user does not exists")
+		return nil, NewValidationInputFailed("the given User does not exists")
 	}
 
 	now := g.timeProvider()
-	err = g.api.update(&UpdateInput{
+	err = g.api.Update(&UpdateInput{
 		ID:          user.ID,
 		Password:    nil,
 		ValidatedAt: &now,
@@ -106,17 +106,17 @@ func (g LocalProvider) ValidatedEmail(input *ValidateEmailInput) (*InitializeAcc
 }
 
 func (g LocalProvider) Retrieve(input *ValidationInput) (*ValidationOutput, error) {
-	content, err := g.api.user(input.Email)
+	content, err := g.api.User(input.Email)
 	if err != nil {
-		return nil, NewProviderError(err, "could not validate the given user")
+		return nil, NewProviderError(err, "could not validate the given User")
 	}
 
 	if content == nil {
-		return nil, NewValidationInputFailed("the given user does not exists")
+		return nil, NewValidationInputFailed("the given User does not exists")
 	}
 
 	if content.ValidatedAt == nil {
-		return nil, NewValidationInputFailed("the given user needs to be validated")
+		return nil, NewValidationInputFailed("the given User needs to be validated")
 	}
 
 	correctPassword, err := g.passwordCypher.Compare(input.Secret, content.Password)
@@ -136,13 +136,13 @@ func (g LocalProvider) Name() string {
 }
 
 func (g LocalProvider) SignUp(input *SignUpInput) (*SignUpOutput, error) {
-	user, err := g.api.user(input.Email)
+	user, err := g.api.User(input.Email)
 	if err != nil {
 		return nil, err
 	}
 
 	if user != nil {
-		return nil, NewValidationInputFailed("a user with the same email already exists")
+		return nil, NewValidationInputFailed("a User with the same email already exists")
 	}
 
 	encryptedPassword, err := g.createHashedPassword(input.Secret)
@@ -150,7 +150,7 @@ func (g LocalProvider) SignUp(input *SignUpInput) (*SignUpOutput, error) {
 		return nil, err
 	}
 
-	output, err := g.api.register(&RegisterInput{
+	output, err := g.api.Register(&RegisterInput{
 		Email:     input.Email,
 		Password:  encryptedPassword,
 		Validated: input.Validated,
@@ -180,11 +180,11 @@ func (g LocalProvider) createHashedPassword(password string) (string, error) {
 	return encryptedPassword, nil
 }
 
-type localAPI interface {
-	// user returns a user by it's email. If the user does not exists returns nil, nil
-	user(email string) (*localUser, error)
-	register(input *RegisterInput) (*RegisterOutput, error)
-	update(input *UpdateInput) error
+type LocalAPI interface {
+	// User returns a User by it's email. If the User does not exists returns nil, nil
+	User(email string) (*localUser, error)
+	Register(input *RegisterInput) (*RegisterOutput, error)
+	Update(input *UpdateInput) error
 }
 
 type localUser struct {

@@ -89,7 +89,7 @@ func ExampleAuthenticationPoolProvider_Authenticate() {
 		return authenticationProvider.Authenticate(localAccountRetriever, &AuthenticateInput{Email: email, Secret: password})
 	}
 
-	// The given user is not authenticated.
+	// The given User is not authenticated.
 	_, err := authenticate()
 	fmt.Println(err.Error())
 
@@ -98,7 +98,7 @@ func ExampleAuthenticationPoolProvider_Authenticate() {
 		panic(err)
 	}
 
-	// The given user email needs to be validated.
+	// The given User email needs to be validated.
 	_, err = authenticate()
 	fmt.Println(err.Error())
 
@@ -117,8 +117,8 @@ func ExampleAuthenticationPoolProvider_Authenticate() {
 	fmt.Println(fmt.Sprintf("%s.%s", parts[0], parts[1]))
 	fmt.Println(output.RefreshToken.Token)
 
-	// Output: the given user does not exists
-	// the given user needs to be validated
+	// Output: the given User does not exists
+	// the given User needs to be validated
 	// eyJhbGciOiJFZERTQSJ9.eyJlbWFpbCI6ImFueUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImV4cCI6MTU1NDM0MjAwLCJmYW1pbHlfbmFtZSI6IiIsImdpdmVuX25hbWUiOiIiLCJpYXQiOjE1NTQzMzYwMCwiaXNzIjoiYXBwIiwianRpIjoiR0dHRzpGRkZGIiwibmFtZSI6IiAiLCJuYmYiOjE1NTQzMzYwMCwicGhvbmVfbnVtYmVyIjoiIiwicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjpmYWxzZSwicGljdHVyZSI6bnVsbCwic3ViIjoiR0dHRyJ9
 	// RUVFRTpHR0dHOkFBQQ==
 }
@@ -141,7 +141,7 @@ func ExampleAuthenticationPoolProvider_Verify() {
 		panic(err)
 	}
 
-	// The given user has valid credentials.
+	// The given User has valid credentials.
 	err = authenticationProvider.Verify(output.AccessToken.Content)
 	fmt.Print(err)
 	// Output: <nil>
