@@ -1,0 +1,400 @@
+package authentication_pool
+
+import (
+	"authentication-pool/random"
+	"encoding/base64"
+	"errors"
+	"fmt"
+	"github.com/google/uuid"
+	"github.com/pascaldekloe/jwt"
+	"strings"
+	"time"
+)
+
+type JWTTokenProvider struct {
+	issuer   string
+	audience []string
+
+	jwtHandler     JWTHandler
+	obscureHandler ObscureTokenHandler
+	timeProvider   timeProvider
+	persistence    TokenPersistence
+}
+
+func NewJWTTokenProvider(issuer string, audience []string, jwtHandler JWTHandler, obscureHandler ObscureTokenHandler, persistence TokenPersistence) *JWTTokenProvider {
+	return &JWTTokenProvider{
+		issuer:         issuer,
+		audience:       audience,
+		jwtHandler:     jwtHandler,
+		obscureHandler: obscureHandler,
+		persistence:    persistence,
+		timeProvider:   osTimeProvider,
+	}
+}
+
+func (j JWTTokenProvider) CreateToken(input *CreateTokenInput) (*CreateTokenOutput, error) {
+	issueInput := &IssueInput{
+		RegisteredClaims: RegisteredClaims{
+			Issuer:   j.issuer,
+			Subject:  input.ID,
+			Audience: j.audience,
+		},
+		PublicClaims: PublicClaims{
+			Name:                 input.Name,
+			GivenName:            input.GivenName,
+			FamilyName:           input.FamilyName,
+			Email:                input.Email,
+			EmailVerified:        input.EmailVerified,
+			Picture:              input.Picture,
+			PhoneNumber:          "",
+			PhoneNumberVerified:  false,
+			AdditionalProperties: nil,
+		},
+		PrivateClaims: PrivateClaims{},
+	}
+
+	output, err := j.jwtHandler.Issue(issueInput)
+	if err != nil {
+		return nil, err
+	}
+
+	obscure, err := j.obscureHandler.Issue(input.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	tokens := &CreateTokenOutput{
+		AccessToken: output.Token,
+		RefreshToken: &RefreshToken{
+			ID:      obscure.ObscureToken.ID(),
+			Content: obscure.ObscureToken.Value(),
+			Token:   obscure.ObscureToken.Token(),
+		},
+	}
+
+	err = j.persistTokens(tokens, input.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
+func (j JWTTokenProvider) persistTokens(tokens *CreateTokenOutput, accountID string) (err error) {
+	accessToken := NewEntity(
+		tokens.AccessToken.ID,
+		tokens.AccessToken.TokenType,
+		accountID,
+		tokens.AccessToken.Content,
+		nil,
+		&tokens.AccessToken.ExpireAt)
+	refreshToken := NewEntity(
+		tokens.RefreshToken.ID,
+		"refresh",
+		accountID,
+		tokens.RefreshToken.Content,
+		&tokens.AccessToken.ID,
+		nil)
+
+	if err = j.persistence.Save(accessToken); err != nil {
+		return
+	}
+	if err = j.persistence.Save(refreshToken); err != nil {
+		return
+	}
+
+	return
+}
+
+func (j JWTTokenProvider) Verify(input string) (*VerifyTokenOutput, error) {
+	result, err := j.jwtHandler.Verify(&VerifyInput{input})
+	if err != nil {
+		return nil, err
+	}
+
+	if !j.validateTime(result.ExpiredAt) {
+		return nil, ErrExpiredToken
+	}
+
+	return &VerifyTokenOutput{Valid: true}, nil
+}
+
+func (j JWTTokenProvider) validateTime(input time.Time) bool {
+	now := j.timeProvider()
+
+	return input.After(now)
+}
+
+func (j JWTTokenProvider) Refresh(input *RefreshTokenInput) (*RefreshTokenOutput, error) {
+	result, err := j.jwtHandler.Verify(&VerifyInput{input.AccessToken})
+	if err != nil {
+		return nil, err
+	}
+
+	if !j.validateTime(result.ExpiredAt) {
+		return nil, errors.New("the given access token has not expired")
+	}
+
+	obscureToken, err := NewObscureTokenFromRawContent(input.RefreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := j.persistence.Find(obscureToken.ID())
+	if err != nil {
+		return nil, err
+	}
+
+	if refreshToken.Status != "enabled" {
+		return nil, ErrDisabledToken
+	}
+
+	if *refreshToken.RelatedTokenID != result.RegisteredClaims.JsonWebTokenID {
+		return nil, ErrInvalidToken
+	}
+
+	if refreshToken.Content != obscureToken.Value() {
+		return nil, ErrInvalidToken
+	}
+
+	issueTokenOutput, err := j.jwtHandler.Issue(&IssueInput{
+		RegisteredClaims: *result.RegisteredClaims,
+		PublicClaims:     *result.PublicClaims,
+		PrivateClaims:    PrivateClaims{},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &RefreshTokenOutput{AccessToken: issueTokenOutput.Token}, nil
+}
+
+type PascalDeKloeJWTHandler struct {
+	algorithm     string
+	publicKey     []byte
+	privateKey    []byte
+	timeProvider  timeProvider
+	idProvider    IDGenerator
+	timeToLive    time.Duration
+	timeToBeValid time.Duration
+}
+
+func NewPascalDeKloeJWTHandler(algorithm string, publicKey, privateKey []byte, timeToLive time.Duration, timeToBeValid time.Duration) *PascalDeKloeJWTHandler {
+	return &PascalDeKloeJWTHandler{
+		algorithm:     algorithm,
+		publicKey:     publicKey,
+		privateKey:    privateKey,
+		timeProvider:  osTimeProvider,
+		idProvider:    UUIDGenerator,
+		timeToLive:    timeToLive,
+		timeToBeValid: timeToBeValid,
+	}
+}
+
+type timeProvider func() time.Time
+
+type fixedTimeProvider struct {
+	now time.Time
+}
+
+func newFixedTimeProvider(now time.Time) *fixedTimeProvider {
+	return &fixedTimeProvider{now: now}
+}
+
+func (f *fixedTimeProvider) Now() time.Time {
+	return f.now
+}
+
+func osTimeProvider() time.Time {
+	return time.Now()
+}
+
+func UUIDGenerator() string {
+	return uuid.New().String()
+}
+
+func (p PascalDeKloeJWTHandler) Issue(input *IssueInput) (*IssueOutput, error) {
+	now := p.timeProvider()
+	expireAt := now.Add(p.timeToLive)
+	input.RegisteredClaims.JsonWebTokenID = fmt.Sprintf("%s:%s", input.RegisteredClaims.Subject, p.idProvider())
+
+	c := jwt.Claims{
+		Registered: jwt.Registered{
+			ID:        input.RegisteredClaims.JsonWebTokenID,
+			Issuer:    input.RegisteredClaims.Issuer,
+			Subject:   input.RegisteredClaims.Subject,
+			Audiences: input.RegisteredClaims.Audience,
+			Issued:    jwt.NewNumericTime(now),
+			Expires:   jwt.NewNumericTime(expireAt),
+			NotBefore: jwt.NewNumericTime(now.Add(p.timeToBeValid)),
+		},
+		Set: map[string]interface{}{
+			"email":                 input.PublicClaims.Email,
+			"name":                  input.PublicClaims.Name,
+			"family_name":           input.PublicClaims.FamilyName,
+			"email_verified":        input.PublicClaims.EmailVerified,
+			"given_name":            input.PublicClaims.GivenName,
+			"phone_number":          input.PublicClaims.PhoneNumber,
+			"phone_number_verified": input.PublicClaims.PhoneNumberVerified,
+			"picture":               input.PublicClaims.Picture,
+		},
+	}
+
+	token, err := c.EdDSASign(p.privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &IssueOutput{
+		Token: &Token{
+			ID:        input.RegisteredClaims.JsonWebTokenID,
+			TokenType: "Bearer",
+			Content:   string(token),
+			ExpireAt:  expireAt,
+		},
+		CreatedAt: now,
+	}, nil
+}
+
+func (p PascalDeKloeJWTHandler) Verify(input *VerifyInput) (*VerifyOutput, error) {
+	var photo *string
+	claims, err := jwt.EdDSACheck([]byte(input.Token), p.publicKey)
+	if err != nil {
+		return nil, ErrInvalidToken
+	}
+
+	if v, ok := claims.Set["photo"]; ok {
+		if s, vString := v.(string); vString {
+			photo = &s
+		}
+	}
+
+	return &VerifyOutput{
+		ExpiredAt: claims.Expires.Time(),
+		RegisteredClaims: &RegisteredClaims{
+			Issuer:         claims.Issuer,
+			Subject:        claims.Subject,
+			Audience:       claims.Audiences,
+			JsonWebTokenID: claims.ID,
+		},
+		PublicClaims: &PublicClaims{
+			Name:                 stringValue(claims.Set, "name"),
+			GivenName:            stringValue(claims.Set, "given_name"),
+			FamilyName:           stringValue(claims.Set, "family_name"),
+			Email:                stringValue(claims.Set, "email"),
+			EmailVerified:        boolValue(claims.Set, "email_verified"),
+			Picture:              photo,
+			PhoneNumber:          stringValue(claims.Set, "phone_number"),
+			PhoneNumberVerified:  boolValue(claims.Set, "phone_number_verified"),
+			AdditionalProperties: nil,
+		},
+		PrivateClaims: &PrivateClaims{},
+	}, nil
+}
+
+type ObscureVerifyTokenInput struct {
+	Token string
+}
+
+type ObscureVerifyTokenOutput struct {
+	Subject string
+	ID      string
+}
+
+type ObscureTokenHandler interface {
+	Issue(owner string) (*IssueObscureTokenOutput, error)
+}
+
+type IssueObscureTokenOutput struct {
+	ObscureToken *ObscureToken
+}
+
+type ObscureUUIDTokenHandler struct {
+	idProvider      IDGenerator
+	stringGenerator StringGenerator
+}
+
+func NewObscureUUIDTokenHandler() *ObscureUUIDTokenHandler {
+	return &ObscureUUIDTokenHandler{
+		idProvider:      UUIDGenerator,
+		stringGenerator: random.Str,
+	}
+}
+
+func (o ObscureUUIDTokenHandler) Issue(owner string) (*IssueObscureTokenOutput, error) {
+	return &IssueObscureTokenOutput{
+		ObscureToken: NewObscureToken(o.idProvider(), o.stringGenerator(450), owner),
+	}, nil
+}
+
+type ObscureToken struct {
+	id      string
+	content string
+	subject string
+}
+
+type StringGenerator func(length int) string
+
+type IDGenerator func() string
+
+func (o *ObscureToken) ID() string {
+	return fmt.Sprintf("%s:%s", o.id, o.subject)
+}
+
+func (o *ObscureToken) Value() string {
+	return o.content
+}
+
+func (o *ObscureToken) Token() string {
+	token := fmt.Sprintf("%s:%s", o.ID(), o.content)
+	return base64.URLEncoding.EncodeToString([]byte(token))
+}
+
+func NewObscureToken(id, token, subject string) *ObscureToken {
+	return &ObscureToken{
+		id:      id,
+		content: token,
+		subject: subject,
+	}
+}
+
+func NewObscureTokenFromRawContent(token string) (*ObscureToken, error) {
+	var result []byte
+	_, err := base64.URLEncoding.Decode(result, []byte(token))
+	if err != nil {
+		return nil, err
+	}
+
+	parts := strings.Split(string(result), ":")
+
+	if len(parts) != 3 {
+		return nil, ErrInvalidToken
+	}
+
+	return &ObscureToken{
+		id:      parts[0],
+		content: parts[1],
+		subject: parts[2],
+	}, nil
+}
+
+func boolValue(input map[string]interface{}, key string) bool {
+	if v, ok := input[key]; ok {
+		if s, isBool := v.(bool); isBool {
+			return s
+		}
+	}
+
+	return false
+}
+
+func stringValue(input map[string]interface{}, key string) string {
+	if v, ok := input[key]; ok {
+		if s, isString := v.(string); isString {
+			return s
+		}
+	}
+
+	return ""
+}
