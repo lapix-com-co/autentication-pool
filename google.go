@@ -36,7 +36,11 @@ func (h googlePeople) GetUser(accessToken string) (user *GoogleUser, err error) 
 	}
 
 	if res.StatusCode != 200 {
-		return nil, fmt.Errorf("invalid response from server: %s", string(data))
+		if res.StatusCode == 400 {
+			return nil, fmt.Errorf("the given token is not valid")
+		}
+
+		return nil, NewProviderError(err, "invalid response from server. Please try again")
 	}
 
 	user = &GoogleUser{}

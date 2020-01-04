@@ -34,6 +34,7 @@ func (i InMemoryLocalAPI) Register(input *RegisterInput) (*RegisterOutput, error
 		FirstName: "",
 		LastName:  "",
 		Password:  input.Password,
+		Enabled:   true,
 	}
 
 	if input.Validated {
@@ -73,6 +74,7 @@ func (i InMemoryLocalAPI) Update(input *UpdateInput) error {
 type CustomerEntity struct {
 	ID        string
 	Status    string
+	Enabled   bool
 	Email     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -90,7 +92,7 @@ func NewInMemoryCustomerRepository(generator IDGenerator) *InMemoryCustomerRepos
 	}
 }
 
-func (i InMemoryCustomerRepository) Create(input *CreateLocalAccountInput) (*CreateLocalAccountOutput, error) {
+func (i InMemoryCustomerRepository) Create(input *CreateLocalAccountInput) (*LocalAccount, error) {
 	if _, ok := i.set[input.Email]; ok {
 		return nil, ErrDuplicatedEntityExists
 	}
@@ -104,26 +106,52 @@ func (i InMemoryCustomerRepository) Create(input *CreateLocalAccountInput) (*Cre
 	}
 
 	i.set[input.Email] = entity
-	return &CreateLocalAccountOutput{
-		ID:        entity.ID,
-		Status:    entity.Status,
-		Email:     entity.Email,
-		CreatedAt: entity.CreatedAt,
-		UpdatedAt: entity.UpdatedAt,
-	}, nil
+	return modelToEntity(entity), nil
 }
 
-func (i InMemoryCustomerRepository) Find(input *FindLocalAccountInput) (*FindLocalAccountOutput, error) {
+func (i InMemoryCustomerRepository) Find(input *FindLocalAccountInput) (*LocalAccount, error) {
 	if user, ok := i.set[input.Email]; !ok {
 		return nil, nil
 	} else {
-		return &FindLocalAccountOutput{
-			ID:        user.ID,
-			Status:    user.Status,
-			Email:     user.Email,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-		}, nil
+		return modelToEntity(user), nil
+	}
+}
+
+func (i InMemoryCustomerRepository) Delete(input *DeleteLocalAccountInput) (*LocalAccount, error) {
+	if v, ok := i.set[input.Email]; !ok {
+		delete(i.set, input.Email)
+		return modelToEntity(v), nil
+	}
+
+	return nil, ErrNotFound
+}
+
+func (i InMemoryCustomerRepository) Enable(input *EnableLocalAccountInput) (*LocalAccount, error) {
+	if user, ok := i.set[input.Email]; !ok {
+		return nil, ErrNotFound
+	} else {
+		user.Enabled = true
+		return modelToEntity(user), nil
+	}
+}
+
+func (i InMemoryCustomerRepository) Disable(input *DisableLocalAccountInput) (*LocalAccount, error) {
+	if user, ok := i.set[input.Email]; !ok {
+		return nil, ErrNotFound
+	} else {
+		user.Enabled = false
+		return modelToEntity(user), nil
+	}
+}
+
+func modelToEntity(entity *CustomerEntity) *LocalAccount {
+	return &LocalAccount{
+		ID:        entity.ID,
+		Status:    entity.Status,
+		Email:     entity.Email,
+		Enabled:   entity.Enabled,
+		CreatedAt: entity.CreatedAt,
+		UpdatedAt: entity.UpdatedAt,
 	}
 }
 

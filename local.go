@@ -115,11 +115,15 @@ func (g LocalProvider) Retrieve(input *ValidationInput) (*ValidationOutput, erro
 		return nil, NewValidationInputFailed("the given User does not exists")
 	}
 
+	if !content.Enabled {
+		return nil, NewValidationInputFailed("the given user account is not available")
+	}
+
 	if content.ValidatedAt == nil {
 		return nil, NewValidationInputFailed("the given User needs to be validated")
 	}
 
-	correctPassword, err := g.passwordCypher.Compare(input.Secret, content.Password)
+	correctPassword, err := g.passwordCypher.Compare(content.Password, input.Secret)
 	if err != nil {
 		return nil, NewProviderError(err, "could not compare the passwords")
 	}
@@ -193,6 +197,7 @@ type LocalUser struct {
 	FirstName   string
 	LastName    string
 	Password    string
+	Enabled     bool
 	ValidatedAt *time.Time
 }
 
@@ -238,9 +243,7 @@ func (b BCRYPTHandler) Make(password string) (string, error) {
 }
 
 func (b BCRYPTHandler) Compare(givenValue string, target string) (valid bool, err error) {
-	hashedPassword := []byte(target)
-	password := []byte(givenValue)
-	err = bcrypt.CompareHashAndPassword(hashedPassword, password)
+	err = bcrypt.CompareHashAndPassword([]byte(string(givenValue)), []byte(target))
 	return err == nil, nil
 }
 

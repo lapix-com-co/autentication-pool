@@ -152,33 +152,41 @@ type SignUpOutput struct {
 // difference between LocalCustomerRegister and FederatedAccountRegister is that a LocalCustomer can
 // have many FederatedAccounts because you can be registered with facebook, google, with local credentials, etc.
 type LocalCustomerRegister interface {
-	Create(input *CreateLocalAccountInput) (*CreateLocalAccountOutput, error)
+	Create(input *CreateLocalAccountInput) (*LocalAccount, error)
 	// Find retrieve the account by email, if there are no valid accounts return nil, nil.
-	Find(input *FindLocalAccountInput) (*FindLocalAccountOutput, error)
+	Find(input *FindLocalAccountInput) (*LocalAccount, error)
+	Delete(input *DeleteLocalAccountInput) (*LocalAccount, error)
+	Enable(input *EnableLocalAccountInput) (*LocalAccount, error)
+	Disable(input *DisableLocalAccountInput) (*LocalAccount, error)
+}
+
+type LocalAccount struct {
+	ID        string
+	Status    string
+	Enabled   bool
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type CreateLocalAccountInput struct {
 	Email string
 }
 
-type CreateLocalAccountOutput struct {
-	ID        string
-	Status    string
-	Email     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
 type FindLocalAccountInput struct {
 	Email string
 }
 
-type FindLocalAccountOutput struct {
-	ID        string
-	Status    string
-	Email     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type DeleteLocalAccountInput struct {
+	Email string
+}
+
+type EnableLocalAccountInput struct {
+	Email string
+}
+
+type DisableLocalAccountInput struct {
+	Email string
 }
 
 type FederatedAccountRegister interface {
