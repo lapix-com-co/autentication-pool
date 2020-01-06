@@ -1,11 +1,12 @@
 package authentication_pool
 
 type AuthenticationPoolProvider struct {
-	tokenProvider TokenProvider
+	tokenProvider         TokenProvider
+	localCustomerRegister LocalCustomerRegister
 }
 
-func NewAuthenticationPoolProvider(tokenProvider TokenProvider) *AuthenticationPoolProvider {
-	return &AuthenticationPoolProvider{tokenProvider: tokenProvider}
+func NewAuthenticationPoolProvider(tokenProvider TokenProvider, localCustomerRegister LocalCustomerRegister) *AuthenticationPoolProvider {
+	return &AuthenticationPoolProvider{tokenProvider: tokenProvider, localCustomerRegister: localCustomerRegister}
 }
 
 func (a AuthenticationPoolProvider) Authenticate(handler AccountRetriever, input *AuthenticateInput) (*AuthenticateOutput, error) {
@@ -39,15 +40,20 @@ func (a AuthenticationPoolProvider) Authenticate(handler AccountRetriever, input
 	}, nil
 }
 
-func (a AuthenticationPoolProvider) Verify(input string) error {
+func (a AuthenticationPoolProvider) Verify(input string) (*AuthenticationVerifyOutput, error) {
 	output, err := a.tokenProvider.Verify(input)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !output.Valid {
-		return ErrInvalidToken
+		return nil, ErrInvalidToken
 	}
 
-	return nil
+	customer, err := a.localCustomerRegister.Find(&FindLocalAccountInput{Email: *output.CustomerEmail})
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthenticationVerifyOutput{Account: customer}, nil
 }

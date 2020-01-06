@@ -116,7 +116,7 @@ func (j JWTTokenProvider) Verify(input string) (*VerifyTokenOutput, error) {
 		return nil, ErrExpiredToken
 	}
 
-	return &VerifyTokenOutput{Valid: true}, nil
+	return &VerifyTokenOutput{Valid: true, CustomerEmail: &result.PublicClaims.Email}, nil
 }
 
 func (j JWTTokenProvider) validateTime(input time.Time) bool {

@@ -22,8 +22,8 @@ type AuthenticationHandler interface {
 	// access Token are created.
 	Authenticate(handler AccountRetriever, input *AuthenticateInput) (*AuthenticateOutput, error)
 	// Verify takes an access token and validates if it exists and is
-	//enabled, then it validates if it has expired.
-	Verify(input string) error
+	// enabled, then it validates if it has expired.
+	Verify(input string) (*AuthenticationVerifyOutput, error)
 }
 
 type AuthenticateInput struct {
@@ -35,6 +35,10 @@ type AuthenticateOutput struct {
 	Account      *CustomerAccount
 	AccessToken  *Token
 	RefreshToken *RefreshToken
+}
+
+type AuthenticationVerifyOutput struct {
+	Account *LocalAccount
 }
 
 type AccountRetriever interface {
@@ -235,7 +239,8 @@ type TokenProvider interface {
 }
 
 type VerifyTokenOutput struct {
-	Valid bool
+	Valid         bool
+	CustomerEmail *string
 }
 
 type CreateTokenInput struct {

@@ -61,11 +61,11 @@ func init() {
 		timeProvider:   timeProvider.Now,
 		persistence:    inMemoryTokenRepo,
 	}
-	authenticationProvider = NewAuthenticationPoolProvider(tokenProvider)
 
 	federatedAccountRepository := NewInMemoryFederatedAccountRepository()
 	customerRepository := NewInMemoryCustomerRepository(id)
 	localAccountSync := NewLocalSynchronization(customerRepository, federatedAccountRepository)
+	authenticationProvider = NewAuthenticationPoolProvider(tokenProvider, customerRepository)
 
 	localProvider = NewLocalProvider(NewInMemoryLocalAPI(id))
 
@@ -142,7 +142,10 @@ func ExampleAuthenticationPoolProvider_Verify() {
 	}
 
 	// The given User has valid credentials.
-	err = authenticationProvider.Verify(output.AccessToken.Content)
-	fmt.Print(err)
-	// Output: <nil>
+	verifyOutput, err := authenticationProvider.Verify(output.AccessToken.Content)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Print(verifyOutput.Account.Email)
+	// Output: john.doe@gmail.com
 }
