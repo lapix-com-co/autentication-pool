@@ -117,8 +117,8 @@ func ExampleAuthenticationPoolProvider_Authenticate() {
 	fmt.Println(fmt.Sprintf("%s.%s", parts[0], parts[1]))
 	fmt.Println(output.RefreshToken.Token)
 
-	// Output: the given User does not exists
-	// the given User needs to be validated
+	// Output: the given user does not exists
+	// the given user needs to be validated
 	// eyJhbGciOiJFZERTQSJ9.eyJlbWFpbCI6ImFueUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImV4cCI6MTU1NDM0MjAwLCJmYW1pbHlfbmFtZSI6IiIsImdpdmVuX25hbWUiOiIiLCJpYXQiOjE1NTQzMzYwMCwiaXNzIjoiYXBwIiwianRpIjoiR0dHRzpGRkZGIiwibmFtZSI6IiAiLCJuYmYiOjE1NTQzMzYwMCwicGhvbmVfbnVtYmVyIjoiIiwicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjpmYWxzZSwicGljdHVyZSI6bnVsbCwic3ViIjoiR0dHRyJ9
 	// RUVFRTpHR0dHOkFBQQ==
 }

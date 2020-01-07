@@ -34,7 +34,6 @@ func (i InMemoryLocalAPI) Register(input *RegisterInput) (*RegisterOutput, error
 		FirstName: "",
 		LastName:  "",
 		Password:  input.Password,
-		Enabled:   true,
 	}
 
 	if input.Validated {
@@ -100,6 +99,7 @@ func (i InMemoryCustomerRepository) Create(input *CreateLocalAccountInput) (*Loc
 	entity := &CustomerEntity{
 		ID:        i.idGenerator(),
 		Status:    "enabled",
+		Enabled:   true,
 		Email:     input.Email,
 		CreatedAt: osTimeProvider(),
 		UpdatedAt: osTimeProvider(),

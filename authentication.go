@@ -19,6 +19,11 @@ func (a AuthenticationPoolProvider) Authenticate(handler AccountRetriever, input
 		return nil, err
 	}
 
+	_, err = a.validateAccount(account.Email)
+	if err != nil {
+		return nil, err
+	}
+
 	tokens, err := a.tokenProvider.CreateToken(&CreateTokenInput{
 		ID:            account.ID,
 		Name:          account.Name,
@@ -50,10 +55,27 @@ func (a AuthenticationPoolProvider) Verify(input string) (*AuthenticationVerifyO
 		return nil, ErrInvalidToken
 	}
 
-	customer, err := a.localCustomerRegister.Find(&FindLocalAccountInput{Email: *output.CustomerEmail})
+	customer, err := a.validateAccount(*output.CustomerEmail)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AuthenticationVerifyOutput{Account: customer}, nil
+}
+
+func (a AuthenticationPoolProvider) validateAccount(email string) (*LocalAccount, error) {
+	customer, err := a.localCustomerRegister.Find(&FindLocalAccountInput{Email: email})
+	if err != nil {
+		return nil, err
+	}
+
+	if customer == nil {
+		return nil, NewValidationInputFailed("the given use account does not exists")
+	}
+
+	if !customer.Enabled {
+		return nil, NewValidationInputFailed("the given user account is not available")
+	}
+
+	return customer, nil
 }

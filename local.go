@@ -115,10 +115,6 @@ func (g LocalProvider) Retrieve(input *ValidationInput) (*ValidationOutput, erro
 		return nil, NewValidationInputFailed("the given user does not exists")
 	}
 
-	if !content.Enabled {
-		return nil, NewValidationInputFailed("the given user account is not available")
-	}
-
 	if content.ValidatedAt == nil {
 		return nil, NewValidationInputFailed("the given user needs to be validated")
 	}
@@ -197,7 +193,6 @@ type LocalUser struct {
 	FirstName   string
 	LastName    string
 	Password    string
-	Enabled     bool
 	ValidatedAt *time.Time
 }
 
