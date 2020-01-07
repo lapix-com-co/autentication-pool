@@ -13,6 +13,8 @@ var localAccountRetriever *LocalAccountRetriever
 
 var localProvider *LocalProvider
 
+var tokenProvider TokenProvider
+
 var idsSlice = []string{
 	"AAAA",
 	"BBBB",
@@ -53,7 +55,7 @@ func init() {
 		stringGenerator: func(length int) string { return "AAA" },
 	}
 	inMemoryTokenRepo := NewInMemoryTokenPersistence()
-	tokenProvider := &JWTTokenProvider{
+	tokenProvider = &JWTTokenProvider{
 		issuer:         "app",
 		audience:       []string{},
 		jwtHandler:     jwtHandler,
@@ -148,4 +150,21 @@ func ExampleAuthenticationPoolProvider_Verify() {
 	}
 	fmt.Print(verifyOutput.Account.Email)
 	// Output: john.doe@gmail.com
+}
+
+func ExampleJWTTokenProvider_Refresh() {
+	token, err := tokenProvider.CreateToken(&CreateTokenInput{
+		ID: "identifier",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = tokenProvider.Refresh(&RefreshTokenInput{
+		RefreshToken: token.RefreshToken.Token,
+		AccessToken:  token.AccessToken.Content,
+	})
+
+	fmt.Print(err.Error())
+	// Output: the given access token has not expired
 }

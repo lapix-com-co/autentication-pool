@@ -131,7 +131,7 @@ func (j JWTTokenProvider) Refresh(input *RefreshTokenInput) (*RefreshTokenOutput
 		return nil, err
 	}
 
-	if !j.validateTime(result.ExpiredAt) {
+	if j.validateTime(result.ExpiredAt) {
 		return nil, errors.New("the given access token has not expired")
 	}
 
