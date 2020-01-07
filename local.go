@@ -108,11 +108,11 @@ func (g LocalProvider) ValidatedEmail(input *ValidateEmailInput) (*CustomerAccou
 func (g LocalProvider) Retrieve(input *ValidationInput) (*ValidationOutput, error) {
 	content, err := g.api.User(input.Email)
 	if err != nil {
-		return nil, NewProviderError(err, "could not validate the given User")
+		return nil, NewProviderError(err, "could not validate the given user")
 	}
 
 	if content == nil {
-		return nil, NewValidationInputFailed("the given User does not exists")
+		return nil, NewValidationInputFailed("the given user does not exists")
 	}
 
 	if !content.Enabled {
@@ -120,7 +120,7 @@ func (g LocalProvider) Retrieve(input *ValidationInput) (*ValidationOutput, erro
 	}
 
 	if content.ValidatedAt == nil {
-		return nil, NewValidationInputFailed("the given User needs to be validated")
+		return nil, NewValidationInputFailed("the given user needs to be validated")
 	}
 
 	correctPassword, err := g.passwordCypher.Compare(content.Password, input.Secret)
@@ -165,7 +165,7 @@ func (g LocalProvider) SignUp(input *SignUpInput) (*SignUpOutput, error) {
 	}
 
 	return &SignUpOutput{
-		ID:          output.ID,
+		Email:       input.Email,
 		CreatedAt:   output.CreatedAt,
 		UpdatedAt:   output.UpdatedAt,
 		ValidatedAt: output.ValidatedAt,
@@ -268,6 +268,6 @@ func (b BasicPasswordPolicy) Valid(password string) bool {
 }
 
 func (b BasicPasswordPolicy) Message() string {
-	return "The password can container special characters. Must to have at least 6 characters. Must container " +
+	return "The password can contain special characters. Must to have at least 8 characters. Must container " +
 		"at least: 1 uppercase letter, 1 lowercase letter, 1 special character and 1 number"
 }

@@ -146,7 +146,7 @@ type SignUpInput struct {
 }
 
 type SignUpOutput struct {
-	ID          string
+	Email          string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	ValidatedAt *time.Time
