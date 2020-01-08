@@ -149,10 +149,6 @@ func (j JWTTokenProvider) Refresh(input *RefreshTokenInput) (*RefreshTokenOutput
 		return nil, ErrDisabledToken
 	}
 
-	if *refreshToken.RelatedTokenID != result.RegisteredClaims.JsonWebTokenID {
-		return nil, ErrInvalidToken
-	}
-
 	if refreshToken.Content != obscureToken.Value() {
 		return nil, ErrInvalidToken
 	}
