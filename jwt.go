@@ -360,8 +360,7 @@ func NewObscureToken(id, token, subject string) *ObscureToken {
 }
 
 func NewObscureTokenFromRawContent(token string) (*ObscureToken, error) {
-	var result []byte
-	_, err := base64.URLEncoding.Decode(result, []byte(token))
+	result, err := base64.URLEncoding.DecodeString(token)
 	if err != nil {
 		return nil, err
 	}

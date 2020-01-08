@@ -272,3 +272,48 @@ func TestJWTTokenProvider_CreateToken(t *testing.T) {
 		})
 	}
 }
+
+func TestNewObscureTokenFromRawContent(t *testing.T) {
+	type args struct {
+		token string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *ObscureToken
+		wantErr bool
+	}{
+		{
+			name: "returns the token",
+			args: args{
+				token: "Y3VzdG9tZXJJZDp0b2tlbklkOmFkZGl0aW9uYWw=",
+			},
+			want: &ObscureToken{
+				id:      "customerId",
+				content: "tokenId",
+				subject: "additional",
+			},
+			wantErr: false,
+		},
+		{
+			name: "returns the with invalid token",
+			args: args{
+				token: "ERROR",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewObscureTokenFromRawContent(tt.args.token)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewObscureTokenFromRawContent() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewObscureTokenFromRawContent() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
