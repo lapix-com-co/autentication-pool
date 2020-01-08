@@ -112,14 +112,14 @@ func (j JWTTokenProvider) Verify(input string) (*VerifyTokenOutput, error) {
 		return nil, err
 	}
 
-	if !j.validateTime(result.ExpiredAt) {
+	if !j.validTime(result.ExpiredAt) {
 		return nil, ErrExpiredToken
 	}
 
 	return &VerifyTokenOutput{Valid: true, CustomerEmail: &result.PublicClaims.Email}, nil
 }
 
-func (j JWTTokenProvider) validateTime(input time.Time) bool {
+func (j JWTTokenProvider) validTime(input time.Time) bool {
 	now := j.timeProvider()
 
 	return input.After(now)
@@ -131,7 +131,7 @@ func (j JWTTokenProvider) Refresh(input *RefreshTokenInput) (*RefreshTokenOutput
 		return nil, err
 	}
 
-	if j.validateTime(result.ExpiredAt) {
+	if j.validTime(result.ExpiredAt) {
 		return nil, errors.New("the given access token has not expired")
 	}
 
@@ -339,7 +339,7 @@ type StringGenerator func(length int) string
 type IDGenerator func() string
 
 func (o *ObscureToken) ID() string {
-	return fmt.Sprintf("%s=%s", o.subject, o.id)
+	return o.id
 }
 
 func (o *ObscureToken) Value() string {
@@ -347,13 +347,13 @@ func (o *ObscureToken) Value() string {
 }
 
 func (o *ObscureToken) Token() string {
-	token := fmt.Sprintf("%s:%s:%s", o.ID(), o.content, o.subject)
+	token := fmt.Sprintf("%s:%s:%s", o.ID(), o.Value(), o.subject)
 	return base64.URLEncoding.EncodeToString([]byte(token))
 }
 
 func NewObscureToken(id, token, subject string) *ObscureToken {
 	return &ObscureToken{
-		id:      id,
+		id:      fmt.Sprintf("%s=%s", subject, id),
 		content: token,
 		subject: subject,
 	}
