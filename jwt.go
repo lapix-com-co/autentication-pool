@@ -339,7 +339,7 @@ type StringGenerator func(length int) string
 type IDGenerator func() string
 
 func (o *ObscureToken) ID() string {
-	return fmt.Sprintf("%s:%s", o.id, o.subject)
+	return fmt.Sprintf("%s=%s", o.subject, o.id)
 }
 
 func (o *ObscureToken) Value() string {
@@ -347,7 +347,7 @@ func (o *ObscureToken) Value() string {
 }
 
 func (o *ObscureToken) Token() string {
-	token := fmt.Sprintf("%s:%s", o.ID(), o.content)
+	token := fmt.Sprintf("%s:%s:%s", o.ID(), o.content, o.subject)
 	return base64.URLEncoding.EncodeToString([]byte(token))
 }
 

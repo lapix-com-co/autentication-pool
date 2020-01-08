@@ -24,6 +24,9 @@ var idsSlice = []string{
 	"FFFF",
 	"GGGG",
 	"HHHH",
+	"IIII",
+	"JJJJ",
+	"KKKK",
 }
 
 func id() string {
@@ -121,8 +124,8 @@ func ExampleAuthenticationPoolProvider_Authenticate() {
 
 	// Output: the given user does not exists
 	// the given user needs to be validated
-	// eyJhbGciOiJFZERTQSJ9.eyJlbWFpbCI6ImFueUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImV4cCI6MTU1NDM0MjAwLCJmYW1pbHlfbmFtZSI6IiIsImdpdmVuX25hbWUiOiIiLCJpYXQiOjE1NTQzMzYwMCwiaXNzIjoiYXBwIiwianRpIjoiR0dHRzpGRkZGIiwibmFtZSI6IiAiLCJuYmYiOjE1NTQzMzYwMCwicGhvbmVfbnVtYmVyIjoiIiwicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjpmYWxzZSwicGljdHVyZSI6bnVsbCwic3ViIjoiR0dHRyJ9
-	// RUVFRTpHR0dHOkFBQQ==
+	// eyJhbGciOiJFZERTQSJ9.eyJlbWFpbCI6ImFueUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImV4cCI6MTU1NDM0MjAwLCJmYW1pbHlfbmFtZSI6IiIsImdpdmVuX25hbWUiOiIiLCJpYXQiOjE1NTQzMzYwMCwiaXNzIjoiYXBwIiwianRpIjoiSkpKSjpJSUlJIiwibmFtZSI6IiAiLCJuYmYiOjE1NTQzMzYwMCwicGhvbmVfbnVtYmVyIjoiIiwicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjpmYWxzZSwicGljdHVyZSI6bnVsbCwic3ViIjoiSkpKSiJ9
+	// SkpKSj1ISEhIOkFBQTpKSkpK
 }
 
 func ExampleAuthenticationPoolProvider_Verify() {

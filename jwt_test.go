@@ -317,3 +317,38 @@ func TestNewObscureTokenFromRawContent(t *testing.T) {
 		})
 	}
 }
+
+func TestObscureToken_Token(t *testing.T) {
+	type fields struct {
+		id      string
+		content string
+		subject string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "can build the token",
+			fields: fields{
+				id:      "ID",
+				content: "token-content",
+				subject: "owner",
+			},
+			want: "b3duZXI9SUQ6dG9rZW4tY29udGVudDpvd25lcg==",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := &ObscureToken{
+				id:      tt.fields.id,
+				content: tt.fields.content,
+				subject: tt.fields.subject,
+			}
+			if got := o.Token(); got != tt.want {
+				t.Errorf("Token() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
