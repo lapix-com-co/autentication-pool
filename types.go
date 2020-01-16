@@ -146,7 +146,7 @@ type SignUpInput struct {
 }
 
 type SignUpOutput struct {
-	Email          string
+	Email       string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	ValidatedAt *time.Time
@@ -263,10 +263,11 @@ type CreateTokenOutput struct {
 }
 
 type Token struct {
-	ID        string
-	TokenType string
-	Content   string
-	ExpireAt  time.Time
+	ID         string
+	TokenType  string
+	Content    string
+	ExpireAt   time.Time
+	TimeToLive int64
 }
 
 type RefreshToken struct {

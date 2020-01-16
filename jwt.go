@@ -244,10 +244,11 @@ func (p PascalDeKloeJWTHandler) Issue(input *IssueInput) (*IssueOutput, error) {
 
 	return &IssueOutput{
 		Token: &Token{
-			ID:        input.RegisteredClaims.JsonWebTokenID,
-			TokenType: "Bearer",
-			Content:   string(token),
-			ExpireAt:  expireAt,
+			ID:         input.RegisteredClaims.JsonWebTokenID,
+			TokenType:  "Bearer",
+			Content:    string(token),
+			ExpireAt:   expireAt,
+			TimeToLive: int64(p.timeToLive),
 		},
 		CreatedAt: now,
 	}, nil
