@@ -14,7 +14,7 @@ const (
 )
 
 type CodeSender interface {
-	Send(templateName TemplateName, to, code string) error
+	Send(templateName TemplateName, to string, code *codes.Code) error
 }
 
 type LocalAccountManager struct {
@@ -43,7 +43,7 @@ func (l LocalAccountManager) SendValidationCode(input *SendValidationCodeInput) 
 		return err
 	}
 
-	if err = l.codeSender.Send(Validation, user.Email, output.Code.Content); err != nil {
+	if err = l.codeSender.Send(Validation, user.Email, output.Code); err != nil {
 		return err
 	}
 
@@ -78,7 +78,7 @@ func (l LocalAccountManager) RemindPassword(input *RemindPasswordInput) error {
 		return err
 	}
 
-	if err = l.codeSender.Send(Reminder, user.Email, output.Code.Content); err != nil {
+	if err = l.codeSender.Send(Reminder, user.Email, output.Code); err != nil {
 		return err
 	}
 
@@ -99,7 +99,8 @@ func (l LocalAccountManager) ResetPassword(input *ResetPasswordInput) (*Customer
 }
 
 type send struct {
-	to, code, templateName string
+	code             *codes.Code
+	to, templateName string
 }
 
 type TestCodeSender struct {
@@ -111,7 +112,7 @@ func NewTestCodeSender() *TestCodeSender {
 	return &TestCodeSender{store: map[string]*send{}}
 }
 
-func (t *TestCodeSender) Send(templateName TemplateName, to, code string) error {
+func (t *TestCodeSender) Send(templateName TemplateName, to string, code *codes.Code) error {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 

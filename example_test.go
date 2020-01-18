@@ -192,7 +192,7 @@ func ExampleLocalAccountManager_SendValidationCode() {
 
 	manager.SendValidationCode(&SendValidationCodeInput{Nickname: email})
 	send := codeSender.store[email]
-	fmt.Printf("code sent %s\n", send.code)
+	fmt.Printf("code sent %s\n", send.code.Content)
 
 	account, err := manager.ValidateAccount(&ValidateAccountInput{Nickname: email, Code: "123456"})
 	if err != nil {
