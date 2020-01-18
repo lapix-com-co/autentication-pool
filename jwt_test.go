@@ -336,7 +336,7 @@ func TestObscureToken_Token(t *testing.T) {
 				content: "token-content",
 				subject: "owner",
 			},
-			want: "b3duZXI9SUQ6dG9rZW4tY29udGVudDpvd25lcg==",
+			want: "SUQ6dG9rZW4tY29udGVudDpvd25lcg==",
 		},
 	}
 	for _, tt := range tests {
