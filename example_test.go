@@ -3,6 +3,7 @@ package authentication_pool
 import (
 	"crypto/ed25519"
 	"fmt"
+	"github.com/lapix-com-co/authentication-pool/codes"
 	"strings"
 	"time"
 )
@@ -72,7 +73,7 @@ func init() {
 	localAccountSync := NewLocalSynchronization(customerRepository, federatedAccountRepository)
 	authenticationProvider = NewAuthenticationPoolProvider(tokenProvider, customerRepository)
 
-	localProvider = NewLocalProvider(NewInMemoryLocalAPI(id))
+	localProvider = NewLocalProvider(NewInMemoryLocalAPI(id), []OnSignUp{})
 
 	// Those are the available providers.
 	providerFactory := NewProviderFactory(map[ProviderName]Provider{
@@ -94,7 +95,7 @@ func ExampleAuthenticationPoolProvider_Authenticate() {
 		return authenticationProvider.Authenticate(localAccountRetriever, &AuthenticateInput{Email: email, Secret: password})
 	}
 
-	// The given User is not authenticated.
+	// The given user is not authenticated.
 	_, err := authenticate()
 	fmt.Println(err.Error())
 
@@ -122,7 +123,7 @@ func ExampleAuthenticationPoolProvider_Authenticate() {
 	fmt.Println(fmt.Sprintf("%s.%s", parts[0], parts[1]))
 	fmt.Println(output.RefreshToken.Token)
 
-	// Output: the given user does not exists
+	// Output: the given user does not exist
 	// the given user needs to be validated
 	// eyJhbGciOiJFZERTQSJ9.eyJlbWFpbCI6ImFueUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImV4cCI6MTU1NDM0MjAwLCJmYW1pbHlfbmFtZSI6IiIsImdpdmVuX25hbWUiOiIiLCJpYXQiOjE1NTQzMzYwMCwiaXNzIjoiYXBwIiwianRpIjoiSkpKSjpJSUlJIiwibmFtZSI6IiAiLCJuYmYiOjE1NTQzMzYwMCwicGhvbmVfbnVtYmVyIjoiIiwicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjpmYWxzZSwicGljdHVyZSI6bnVsbCwic3ViIjoiSkpKSiJ9
 	// SkpKSj1ISEhIOkFBQTpKSkpK
@@ -170,4 +171,50 @@ func ExampleJWTTokenProvider_Refresh() {
 
 	fmt.Print(err.Error())
 	// Output: the given access token has not expired
+}
+
+func ExampleLocalAccountManager_SendValidationCode() {
+	localAPI := NewInMemoryLocalAPI(id)
+	localProvider := NewLocalProvider(localAPI, []OnSignUp{})
+	codesPolicy := codes.NewLimitIssuerPolicy(codes.NewInMemoryTriesRepository(), 5, time.Hour)
+	codeHandler := codes.NewHandler(func() string { return "123456" }, codes.NewInMemoryRepository(), codesPolicy, time.Hour/2)
+	codeSender := NewTestCodeSender()
+	manager := NewLocalAccountManager(localAPI, localProvider, codeHandler, codeSender)
+
+	email := "john.doe@gmail.com"
+	pass := "qwerty"
+
+	localAPI.Register(&RegisterInput{
+		Email:     email,
+		Password:  pass,
+		Validated: false,
+	})
+
+	manager.SendValidationCode(&SendValidationCodeInput{Nickname: email})
+	send := codeSender.store[email]
+	fmt.Printf("code sent %s\n", send.code)
+
+	account, err := manager.ValidateAccount(&ValidateAccountInput{Nickname: email, Code: "123456"})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("validated %v\n", account.EmailVerified)
+
+	_, err = manager.ValidateAccount(&ValidateAccountInput{Nickname: email, Code: "123456"})
+	fmt.Println(err.Error())
+
+	err = manager.RemindPassword(&RemindPasswordInput{Nickname: email})
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = manager.ResetPassword(&ResetPasswordInput{Nickname: email, Code: "123456", Password: "newPassword$1"})
+	if err != nil {
+		panic(err)
+	}
+
+	// Output: code sent 123456
+	// validated true
+	// the given code is not available
 }

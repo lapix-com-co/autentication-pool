@@ -16,13 +16,10 @@ var ErrDuplicatedEntityExists = errors.New("the given User already exists")
 var ErrNotFound = errors.New("the given User does not exists")
 
 type AuthenticationHandler interface {
-	// Authenticate finds a User by the credentials. If the given User is valid
-	// in the provider but does not exists in the application thus
-	// the federated account must be created. At the end the
-	// access Token are created.
+	// Authenticate finds a User by the credentials. If the given user is valid in the provider but does not exist in the
+	// application thus the federated account must be created. At the end the access token is created.
 	Authenticate(handler AccountRetriever, input *AuthenticateInput) (*AuthenticateOutput, error)
-	// Verify takes an access token and validates if it exists and is
-	// enabled, then it validates if it has expired.
+	// Verify takes an access token and validates if it exists and is enabled, then it validates if it has expired.
 	Verify(input string) (*AuthenticationVerifyOutput, error)
 }
 
@@ -42,8 +39,7 @@ type AuthenticationVerifyOutput struct {
 }
 
 type AccountRetriever interface {
-	// Retrieve returns the User from the provider
-	// and synchronize the account data.
+	// Retrieve returns the User from the provider and synchronize the account data.
 	Retrieve(input *InitializeAccountInput) (*CustomerAccount, error)
 }
 
@@ -96,9 +92,8 @@ type SynchronizeOutput struct {
 }
 
 type Provider interface {
-	// Retrieve checks that the given credentials are correct.
-	// The provider validates the secret provided by the
-	// User, secret can ve a password, access Token, etc.
+	// Retrieve checks that the given credentials are correct. The provider validates the secret provided by the User,
+	// secret can ve a password, access Token, etc.
 	Retrieve(input *ValidationInput) (*ValidationOutput, error)
 	// Name returns the provider name like, google, facebook, local.
 	Name() string
@@ -152,9 +147,39 @@ type SignUpOutput struct {
 	ValidatedAt *time.Time
 }
 
-// LocalCustomerRegister handle the creation of the User in the local repository as a User. The
-// difference between LocalCustomerRegister and FederatedAccountRegister is that a LocalCustomer can
-// have many FederatedAccounts because you can be registered with facebook, google, with local credentials, etc.
+type AccountManager interface {
+	// SendValidationCode sends a validation code to the given contact method: phone, email.
+	SendValidationCode(*SendValidationCodeInput) error
+	// ValidateAccount accepts the verification code, and the user nickname (phone , email). If those values are valid
+	// marks the user account as validated.
+	ValidateAccount(*ValidateAccountInput) (*CustomerAccount, error)
+	// RemindPassword sends a verification code to the given contact method: phone, email. Need to apply some validation to
+	// the amount of codes that the user tries to send.
+	RemindPassword(*RemindPasswordInput) error
+	// ValidateAccount accepts the verification code, the user nickname (phone , email) and the new password. If the
+	// password accomplishes the "password policy", the code and the nickname match then restarts the customer password.
+	ResetPassword(*ResetPasswordInput) (*CustomerAccount, error)
+}
+
+type SendValidationCodeInput struct {
+	Nickname string
+}
+
+type ValidateAccountInput struct {
+	Nickname, Code string
+}
+
+type RemindPasswordInput struct {
+	Nickname string
+}
+
+type ResetPasswordInput struct {
+	Nickname, Password, Code string
+}
+
+// LocalCustomerRegister handle the creation of the User in the local repository as a User. The difference between
+// LocalCustomerRegister and FederatedAccountRegister is that a LocalCustomer can have many FederatedAccounts because
+// you can be registered with facebook, google, with local credentials, etc.
 type LocalCustomerRegister interface {
 	Create(input *CreateLocalAccountInput) (*LocalAccount, error)
 	// Find retrieve the account by email, if there are no valid accounts return nil, nil.
@@ -195,7 +220,7 @@ type DisableLocalAccountInput struct {
 
 type FederatedAccountRegister interface {
 	Create(input *CreateFederatedAccountInput) (*CreateFederatedAccountOutput, error)
-	// Find retrieves a User by provider and User id. If the given User does not exists returns nil, nil.
+	// Find retrieves a user by the provider and user id. If the given User does not exist returns nil, nil.
 	Find(input *FindFederatedAccountInput) (*FindFederatedAccountOutput, error)
 }
 
@@ -283,8 +308,7 @@ type RefreshTokenInput struct {
 
 type TokenPersistence interface {
 	Save(entity *Entity) error
-	// Find retrieves a token by its ID. If the given token
-	// is not available returns nil, and ErrNotFound.
+	// Find retrieves a token by its ID. If the given token is not available returns nil, and ErrNotFound.
 	Find(tokenID string) (*Entity, error)
 }
 

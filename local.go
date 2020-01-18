@@ -11,21 +11,25 @@ var _ Provider = &LocalProvider{}
 var _ ProviderWithStore = &LocalProvider{}
 var _ passwordHandler = &BCRYPTHandler{}
 
+type OnSignUp func(output *SignUpOutput)
+
 type LocalProvider struct {
 	alias          string
 	api            LocalAPI
 	passwordPolicy PasswordPolicy
 	passwordCypher passwordHandler
 	timeProvider   timeProvider
+	onSignUp       []OnSignUp
 }
 
-func NewLocalProvider(api LocalAPI) *LocalProvider {
+func NewLocalProvider(api LocalAPI, onSignUp []OnSignUp) *LocalProvider {
 	return &LocalProvider{
 		alias:          "local",
 		api:            api,
 		passwordPolicy: NewBasicPasswordPolicy(),
 		passwordCypher: NewBCRYPTHandler(),
 		timeProvider:   osTimeProvider,
+		onSignUp:       onSignUp,
 	}
 }
 
@@ -80,7 +84,7 @@ func (g LocalProvider) ValidatedEmail(input *ValidateEmailInput) (*CustomerAccou
 		return nil, err
 	}
 	if user == nil {
-		return nil, NewValidationInputFailed("the given User does not exists")
+		return nil, NewValidationInputFailed("the given User does not exist")
 	}
 
 	now := g.timeProvider()
@@ -112,7 +116,7 @@ func (g LocalProvider) Retrieve(input *ValidationInput) (*ValidationOutput, erro
 	}
 
 	if content == nil {
-		return nil, NewValidationInputFailed("the given user does not exists")
+		return nil, NewValidationInputFailed("the given user does not exist")
 	}
 
 	if content.ValidatedAt == nil {
@@ -125,7 +129,7 @@ func (g LocalProvider) Retrieve(input *ValidationInput) (*ValidationOutput, erro
 	}
 
 	if !correctPassword {
-		return nil, NewValidationInputFailed("then given password is not valid")
+		return nil, NewValidationInputFailed("then credentials are not valid")
 	}
 
 	return NewValidationOutput(content.ID, content.FirstName, content.LastName, content.Email, nil, content.ValidatedAt != nil), nil
@@ -142,7 +146,7 @@ func (g LocalProvider) SignUp(input *SignUpInput) (*SignUpOutput, error) {
 	}
 
 	if user != nil {
-		return nil, NewValidationInputFailed("a User with the same email already exists")
+		return nil, NewValidationInputFailed("a user with the same email already exists")
 	}
 
 	encryptedPassword, err := g.createHashedPassword(input.Secret)
@@ -160,12 +164,18 @@ func (g LocalProvider) SignUp(input *SignUpInput) (*SignUpOutput, error) {
 		return nil, err
 	}
 
-	return &SignUpOutput{
+	result := &SignUpOutput{
 		Email:       input.Email,
 		CreatedAt:   output.CreatedAt,
 		UpdatedAt:   output.UpdatedAt,
 		ValidatedAt: output.ValidatedAt,
-	}, nil
+	}
+
+	for _, callback := range g.onSignUp {
+		callback(result)
+	}
+
+	return result, nil
 }
 
 func (g LocalProvider) createHashedPassword(password string) (string, error) {
@@ -181,7 +191,7 @@ func (g LocalProvider) createHashedPassword(password string) (string, error) {
 }
 
 type LocalAPI interface {
-	// User returns a User by it's email. If the User does not exists returns nil, nil
+	// User returns a user by her email. If the User does not exist returns nil, nil.
 	User(email string) (*LocalUser, error)
 	Register(input *RegisterInput) (*RegisterOutput, error)
 	Update(input *UpdateInput) error
@@ -263,6 +273,6 @@ func (b BasicPasswordPolicy) Valid(password string) bool {
 }
 
 func (b BasicPasswordPolicy) Message() string {
-	return "The password can contain special characters. Must to have at least 8 characters. Must container " +
+	return "The password can contain special characters. Must have at least 8 characters. Must contain " +
 		"at least: 1 uppercase letter, 1 lowercase letter, 1 special character and 1 number"
 }
