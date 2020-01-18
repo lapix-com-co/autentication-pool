@@ -14,22 +14,24 @@ var _ passwordHandler = &BCRYPTHandler{}
 type OnSignUp func(output *SignUpOutput)
 
 type LocalProvider struct {
-	alias          string
-	api            LocalAPI
-	passwordPolicy PasswordPolicy
-	passwordCypher passwordHandler
-	timeProvider   timeProvider
-	onSignUp       []OnSignUp
+	alias            string
+	api              LocalAPI
+	passwordPolicy   PasswordPolicy
+	passwordCypher   passwordHandler
+	timeProvider     timeProvider
+	onSignUp         []OnSignUp
+	checkCredentials bool
 }
 
-func NewLocalProvider(api LocalAPI, onSignUp []OnSignUp) *LocalProvider {
+func NewLocalProvider(api LocalAPI, checkCredentials bool, onSignUp []OnSignUp) *LocalProvider {
 	return &LocalProvider{
-		alias:          "local",
-		api:            api,
-		passwordPolicy: NewBasicPasswordPolicy(),
-		passwordCypher: NewBCRYPTHandler(),
-		timeProvider:   osTimeProvider,
-		onSignUp:       onSignUp,
+		alias:            "local",
+		api:              api,
+		passwordPolicy:   NewBasicPasswordPolicy(),
+		passwordCypher:   NewBCRYPTHandler(),
+		timeProvider:     osTimeProvider,
+		onSignUp:         onSignUp,
+		checkCredentials: checkCredentials,
 	}
 }
 
@@ -123,13 +125,15 @@ func (g LocalProvider) Retrieve(input *ValidationInput) (*ValidationOutput, erro
 		return nil, NewValidationInputFailed("the given user needs to be validated")
 	}
 
-	correctPassword, err := g.passwordCypher.Compare(content.Password, input.Secret)
-	if err != nil {
-		return nil, NewProviderError(err, "could not compare the passwords")
-	}
+	if g.checkCredentials {
+		correctPassword, err := g.passwordCypher.Compare(content.Password, input.Secret)
+		if err != nil {
+			return nil, NewProviderError(err, "could not compare the passwords")
+		}
 
-	if !correctPassword {
-		return nil, NewValidationInputFailed("then credentials are not valid")
+		if !correctPassword {
+			return nil, NewValidationInputFailed("then credentials are not valid")
+		}
 	}
 
 	return NewValidationOutput(content.ID, content.FirstName, content.LastName, content.Email, nil, content.ValidatedAt != nil), nil

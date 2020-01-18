@@ -39,7 +39,7 @@ type AuthenticationVerifyOutput struct {
 }
 
 type AccountRetriever interface {
-	// Retrieve returns the User from the provider and synchronize the account data.
+	// Retrieve returns the user from the provider and synchronize the account data.
 	Retrieve(input *InitializeAccountInput) (*CustomerAccount, error)
 }
 
