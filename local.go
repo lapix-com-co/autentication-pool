@@ -16,6 +16,7 @@ type OnSignUp func(output *SignUpOutput)
 type LocalProvider struct {
 	alias            string
 	api              LocalAPI
+	synchronizer     AccountSynchronization
 	passwordPolicy   PasswordPolicy
 	passwordCypher   passwordHandler
 	timeProvider     timeProvider
@@ -23,10 +24,11 @@ type LocalProvider struct {
 	checkCredentials bool
 }
 
-func NewLocalProvider(api LocalAPI, checkCredentials bool, onSignUp []OnSignUp) *LocalProvider {
+func NewLocalProvider(api LocalAPI, checkCredentials bool, synchronizer AccountSynchronization, onSignUp []OnSignUp) *LocalProvider {
 	return &LocalProvider{
 		alias:            "local",
 		api:              api,
+		synchronizer:     synchronizer,
 		passwordPolicy:   NewBasicPasswordPolicy(),
 		passwordCypher:   NewBCRYPTHandler(),
 		timeProvider:     osTimeProvider,
@@ -185,7 +187,17 @@ func (g LocalProvider) SignUp(input *SignUpInput) (*SignUpOutput, error) {
 		return nil, err
 	}
 
+	syncOutput, err := g.synchronizer.Synchronize(&SynchronizeInput{
+		Provider: g.Name(),
+		ID:       output.ID,
+		Email:    input.Email,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	result := &SignUpOutput{
+		ID:          syncOutput.CustomerID,
 		Email:       input.Email,
 		CreatedAt:   output.CreatedAt,
 		UpdatedAt:   output.UpdatedAt,

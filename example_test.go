@@ -73,7 +73,7 @@ func init() {
 	localAccountSync := NewLocalSynchronization(customerRepository, federatedAccountRepository)
 	authenticationProvider = NewAuthenticationPoolProvider(tokenProvider, customerRepository)
 
-	localProvider = NewLocalProvider(NewInMemoryLocalAPI(id), true, []OnSignUp{})
+	localProvider = NewLocalProvider(NewInMemoryLocalAPI(id), true, localAccountSync, []OnSignUp{})
 
 	// Those are the available providers.
 	providerFactory := NewProviderFactory(map[ProviderName]Provider{
@@ -175,7 +175,10 @@ func ExampleJWTTokenProvider_Refresh() {
 
 func ExampleLocalAccountManager_SendValidationCode() {
 	localAPI := NewInMemoryLocalAPI(id)
-	localProvider := NewLocalProvider(localAPI, true, []OnSignUp{})
+	federatedAccountRepository := NewInMemoryFederatedAccountRepository()
+	customerRepository := NewInMemoryCustomerRepository(id)
+	localAccountSync := NewLocalSynchronization(customerRepository, federatedAccountRepository)
+	localProvider := NewLocalProvider(localAPI, true, localAccountSync, []OnSignUp{})
 	codesPolicy := codes.NewLimitIssuerPolicy(codes.NewInMemoryTriesRepository(), 5, time.Hour)
 	codeHandler := codes.NewHandler(func() string { return "123456" }, codes.NewInMemoryRepository(), codesPolicy, time.Hour/2)
 	codeSender := NewTestCodeSender()
