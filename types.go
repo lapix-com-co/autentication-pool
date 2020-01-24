@@ -124,6 +124,8 @@ func NewValidationOutput(ID, firstName, lastName, email string, photo *string, v
 type ProviderWithStore interface {
 	// SignUp allows to Register a new User.
 	SignUp(input *SignUpInput) (*SignUpOutput, error)
+	// ValidateSignUp verify the given credentials against the password policies and the email availability.
+	ValidateSignUp(input *SignUpInput) (*ValidateSignUpOutput, error)
 	// UpdatePassword updates the password to the given value.
 	UpdatePassword(input *UpdatePasswordInput) (*CustomerAccount, error)
 	// ValidatedEmail mark the users as with validated email.
@@ -145,6 +147,10 @@ type SignUpOutput struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	ValidatedAt *time.Time
+}
+
+type ValidateSignUpOutput struct {
+	Err error
 }
 
 type AccountManager interface {

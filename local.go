@@ -143,14 +143,31 @@ func (g LocalProvider) Name() string {
 	return g.alias
 }
 
-func (g LocalProvider) SignUp(input *SignUpInput) (*SignUpOutput, error) {
+func (g LocalProvider) ValidateSignUp(input *SignUpInput) (*ValidateSignUpOutput, error) {
 	user, err := g.api.User(input.Email)
 	if err != nil {
 		return nil, err
 	}
 
 	if user != nil {
-		return nil, NewValidationInputFailed("a user with the same email already exists")
+		return &ValidateSignUpOutput{Err: NewValidationInputFailed("user already registered")}, nil
+	}
+
+	if err = g.validatePasswordPolicy(input.Secret); err != nil {
+		return &ValidateSignUpOutput{Err: err}, nil
+	}
+
+	return &ValidateSignUpOutput{}, nil
+}
+
+func (g LocalProvider) SignUp(input *SignUpInput) (*SignUpOutput, error) {
+	validationResult, err := g.ValidateSignUp(input)
+	if err != nil {
+		return nil, err
+	}
+
+	if validationResult.Err != nil {
+		return nil, validationResult.Err
 	}
 
 	encryptedPassword, err := g.createHashedPassword(input.Secret)
@@ -182,15 +199,24 @@ func (g LocalProvider) SignUp(input *SignUpInput) (*SignUpOutput, error) {
 	return result, nil
 }
 
-func (g LocalProvider) createHashedPassword(password string) (string, error) {
+func (g LocalProvider) validatePasswordPolicy(password string) error {
 	if !g.passwordPolicy.Valid(password) {
-		return "", NewValidationInputFailed(g.passwordPolicy.Message())
+		return NewValidationInputFailed(g.passwordPolicy.Message())
+	}
+
+	return nil
+}
+
+func (g LocalProvider) createHashedPassword(password string) (string, error) {
+	if err := g.validatePasswordPolicy(password); err != nil {
+		return "", err
 	}
 
 	encryptedPassword, err := g.passwordCypher.Make(password)
 	if err != nil {
 		return "", NewProviderError(err, "could not encrypt the password")
 	}
+
 	return encryptedPassword, nil
 }
 
