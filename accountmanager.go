@@ -34,6 +34,10 @@ func (l LocalAccountManager) SendValidationCode(input *SendValidationCodeInput) 
 		return err
 	}
 
+	if user == nil {
+		return errors.New("the given user does not exist")
+	}
+
 	if user.ValidatedAt != nil {
 		return errors.New("the given account has been validated already")
 	}
@@ -67,6 +71,10 @@ func (l LocalAccountManager) RemindPassword(input *RemindPasswordInput) error {
 	user, err := l.localAPI.User(input.Nickname)
 	if err != nil {
 		return err
+	}
+
+	if user == nil {
+		return errors.New("the given user does not exist")
 	}
 
 	if user.ValidatedAt == nil {
