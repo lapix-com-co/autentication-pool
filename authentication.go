@@ -10,7 +10,7 @@ func NewAuthenticationPoolProvider(tokenProvider TokenProvider, localCustomerReg
 }
 
 func (a AuthenticationPoolProvider) Authenticate(handler AccountRetriever, input *AuthenticateInput) (*AuthenticateOutput, error) {
-	account, err := handler.Retrieve(&InitializeAccountInput{
+	output, err := handler.Retrieve(&InitializeAccountInput{
 		Email:  input.Email,
 		Secret: input.Secret,
 	})
@@ -19,6 +19,7 @@ func (a AuthenticationPoolProvider) Authenticate(handler AccountRetriever, input
 		return nil, err
 	}
 
+	account := output.Customer
 	_, err = a.validateAccount(account.Email)
 	if err != nil {
 		return nil, err
@@ -42,6 +43,8 @@ func (a AuthenticationPoolProvider) Authenticate(handler AccountRetriever, input
 		Account:      account,
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
+		NewUser:      output.NewUser,
+		NewAccount:   output.NewAccount,
 	}, nil
 }
 

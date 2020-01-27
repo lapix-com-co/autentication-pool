@@ -29,6 +29,8 @@ type AuthenticateInput struct {
 }
 
 type AuthenticateOutput struct {
+	NewUser      bool
+	NewAccount   bool
 	Account      *CustomerAccount
 	AccessToken  *Token
 	RefreshToken *RefreshToken
@@ -40,12 +42,18 @@ type AuthenticationVerifyOutput struct {
 
 type AccountRetriever interface {
 	// Retrieve returns the user from the provider and synchronize the account data.
-	Retrieve(input *InitializeAccountInput) (*CustomerAccount, error)
+	Retrieve(input *InitializeAccountInput) (*InitializeAccountOutput, error)
 }
 
 type InitializeAccountInput struct {
 	Email  string
 	Secret string
+}
+
+type InitializeAccountOutput struct {
+	Customer   *CustomerAccount
+	NewUser    bool
+	NewAccount bool
 }
 
 type CustomerAccount struct {
@@ -83,6 +91,8 @@ type SynchronizeInput struct {
 }
 
 type SynchronizeOutput struct {
+	NewUser             bool
+	NewAccount          bool
 	CustomerID          string
 	ReferenceInProvider string
 	FirstName           string

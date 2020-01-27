@@ -91,6 +91,10 @@ func NewInMemoryCustomerRepository(generator IDGenerator) *InMemoryCustomerRepos
 	}
 }
 
+func (i *InMemoryCustomerRepository) Clear() {
+	i.set = map[string]*CustomerEntity{}
+}
+
 func (i InMemoryCustomerRepository) Create(input *CreateLocalAccountInput) (*LocalAccount, error) {
 	if _, ok := i.set[input.Email]; ok {
 		return nil, ErrDuplicatedEntityExists

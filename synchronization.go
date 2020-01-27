@@ -13,18 +13,20 @@ func NewLocalSynchronization(customerRegister LocalCustomerRegister, accountRegi
 }
 
 func (l LocalSynchronization) Synchronize(input *SynchronizeInput) (*SynchronizeOutput, error) {
-	customerID, err := l.initializeLocalAccount(input)
+	output, err := l.initializeLocalAccount(input)
 	if err != nil {
 		return nil, err
 	}
 
-	err = l.initializeFederatedAccount(customerID, input)
+	federatedOutput, err := l.initializeFederatedAccount(output.CustomerID, input)
 	if err != nil {
 		return nil, err
 	}
 
 	return &SynchronizeOutput{
-		CustomerID:          *customerID,
+		NewUser:             output.NewUser,
+		NewAccount:          federatedOutput.NewUser,
+		CustomerID:          output.CustomerID,
 		ReferenceInProvider: input.ID,
 		FirstName:           input.FirstName,
 		LastName:            input.LastName,
@@ -33,18 +35,22 @@ func (l LocalSynchronization) Synchronize(input *SynchronizeInput) (*Synchronize
 	}, nil
 }
 
-func (l LocalSynchronization) initializeFederatedAccount(customerID *string, validationResult *SynchronizeInput) error {
+type initializeFederatedAccountOutput struct {
+	NewUser bool
+}
+
+func (l LocalSynchronization) initializeFederatedAccount(customerID string, validationResult *SynchronizeInput) (*initializeFederatedAccountOutput, error) {
 	account, err := l.federatedAccountRegister.Find(&FindFederatedAccountInput{
 		Provider: validationResult.Provider,
-		UserID:   *customerID,
+		UserID:   customerID,
 	})
 
 	if err != nil || account != nil {
-		return err
+		return &initializeFederatedAccountOutput{NewUser: false}, err
 	}
 
 	_, err = l.federatedAccountRegister.Create(&CreateFederatedAccountInput{
-		UserID:              *customerID,
+		UserID:              customerID,
 		Provider:            validationResult.Provider,
 		ReferenceInProvider: validationResult.ID,
 		FirstName:           validationResult.FirstName,
@@ -52,17 +58,20 @@ func (l LocalSynchronization) initializeFederatedAccount(customerID *string, val
 		PhotoURL:            validationResult.PhotoURL,
 	})
 
-	return err
+	return &initializeFederatedAccountOutput{NewUser: true}, err
 }
 
-func (l LocalSynchronization) initializeLocalAccount(validationResult *SynchronizeInput) (*string, error) {
+func (l LocalSynchronization) initializeLocalAccount(validationResult *SynchronizeInput) (*initializeLocalAccountOutput, error) {
 	customer, err := l.localCustomerRegister.Find(&FindLocalAccountInput{Email: validationResult.Email})
 	if err != nil {
 		return nil, err
 	}
 
 	if customer != nil {
-		return &customer.ID, nil
+		return &initializeLocalAccountOutput{
+			CustomerID: customer.ID,
+			NewUser:    false,
+		}, nil
 	}
 
 	result, err := l.localCustomerRegister.Create(&CreateLocalAccountInput{Email: validationResult.Email})
@@ -70,5 +79,13 @@ func (l LocalSynchronization) initializeLocalAccount(validationResult *Synchroni
 		return nil, err
 	}
 
-	return &result.ID, nil
+	return &initializeLocalAccountOutput{
+		CustomerID: result.ID,
+		NewUser:    true,
+	}, nil
+}
+
+type initializeLocalAccountOutput struct {
+	CustomerID string
+	NewUser    bool
 }

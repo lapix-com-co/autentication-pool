@@ -10,6 +10,8 @@ import (
 
 var authenticationProvider *AuthenticationPoolProvider
 
+var localAPI *InMemoryLocalAPI
+
 var localAccountRetriever *LocalAccountRetriever
 
 var localProvider *LocalProvider
@@ -30,7 +32,7 @@ var idsSlice = []string{
 	"KKKK",
 }
 
-func id() string {
+func idGenerator() string {
 	element, clone := idsSlice[len(idsSlice)-1], idsSlice[:len(idsSlice)-1]
 	idsSlice = clone
 
@@ -50,12 +52,12 @@ func init() {
 		publicKey:    publicKey,
 		privateKey:   privateKey,
 		timeProvider: timeProvider.Now,
-		idProvider:   id,
+		idProvider:   idGenerator,
 		timeToLive:   time.Minute * 10,
 	}
 
 	obscureTokenHandler := &ObscureUUIDTokenHandler{
-		idProvider:      id,
+		idProvider:      idGenerator,
 		stringGenerator: func(length int) string { return "AAA" },
 	}
 	inMemoryTokenRepo := NewInMemoryTokenPersistence()
@@ -69,11 +71,12 @@ func init() {
 	}
 
 	federatedAccountRepository := NewInMemoryFederatedAccountRepository()
-	customerRepository := NewInMemoryCustomerRepository(id)
+	localAPI = NewInMemoryLocalAPI(idGenerator)
+	customerRepository := NewInMemoryCustomerRepository(idGenerator)
 	localAccountSync := NewLocalSynchronization(customerRepository, federatedAccountRepository)
 	authenticationProvider = NewAuthenticationPoolProvider(tokenProvider, customerRepository)
 
-	localProvider = NewLocalProvider(NewInMemoryLocalAPI(id), true, localAccountSync, []OnSignUp{})
+	localProvider = NewLocalProvider(localAPI, true, localAccountSync, []OnSignUp{})
 
 	// Those are the available providers.
 	providerFactory := NewProviderFactory(map[ProviderName]Provider{
@@ -174,9 +177,9 @@ func ExampleJWTTokenProvider_Refresh() {
 }
 
 func ExampleLocalAccountManager_SendValidationCode() {
-	localAPI := NewInMemoryLocalAPI(id)
+	localAPI := NewInMemoryLocalAPI(idGenerator)
 	federatedAccountRepository := NewInMemoryFederatedAccountRepository()
-	customerRepository := NewInMemoryCustomerRepository(id)
+	customerRepository := NewInMemoryCustomerRepository(idGenerator)
 	localAccountSync := NewLocalSynchronization(customerRepository, federatedAccountRepository)
 	localProvider := NewLocalProvider(localAPI, true, localAccountSync, []OnSignUp{})
 	codesPolicy := codes.NewLimitIssuerPolicy(codes.NewInMemoryTriesRepository(), 5, time.Hour)
