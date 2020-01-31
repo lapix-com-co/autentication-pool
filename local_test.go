@@ -20,7 +20,7 @@ func TestLocalProvider_Validate(t *testing.T) {
 	type fields struct {
 		applicationID   string
 		secret          string
-		passwordHandler passwordHandler
+		passwordHandler PasswordHandler
 		api             LocalAPI
 	}
 	type args struct {

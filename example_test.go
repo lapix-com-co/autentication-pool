@@ -76,7 +76,7 @@ func init() {
 	localAccountSync := NewLocalSynchronization(customerRepository, federatedAccountRepository)
 	authenticationProvider = NewAuthenticationPoolProvider(tokenProvider, customerRepository)
 
-	localProvider = NewLocalProvider(localAPI, true, localAccountSync, []OnSignUp{})
+	localProvider, _ = NewLocalProvider(localAPI, localAccountSync)
 
 	// Those are the available providers.
 	providerFactory := NewProviderFactory(map[ProviderName]Provider{
@@ -181,7 +181,7 @@ func ExampleLocalAccountManager_SendValidationCode() {
 	federatedAccountRepository := NewInMemoryFederatedAccountRepository()
 	customerRepository := NewInMemoryCustomerRepository(idGenerator)
 	localAccountSync := NewLocalSynchronization(customerRepository, federatedAccountRepository)
-	localProvider := NewLocalProvider(localAPI, true, localAccountSync, []OnSignUp{})
+	localProvider, _ := NewLocalProvider(localAPI, localAccountSync)
 	codesPolicy := codes.NewLimitIssuerPolicy(codes.NewInMemoryTriesRepository(), 5, time.Hour)
 	codeHandler := codes.NewHandler(func() string { return "123456" }, codes.NewInMemoryRepository(), codesPolicy, time.Hour/2)
 	codeSender := NewTestCodeSender()

@@ -9,7 +9,7 @@ import (
 
 var _ Provider = &LocalProvider{}
 var _ ProviderWithStore = &LocalProvider{}
-var _ passwordHandler = &BCRYPTHandler{}
+var _ PasswordHandler = &BCRYPTHandler{}
 
 type OnSignUp func(output *SignUpOutput)
 
@@ -18,26 +18,64 @@ type LocalProvider struct {
 	api              LocalAPI
 	synchronizer     AccountSynchronization
 	passwordPolicy   PasswordPolicy
-	passwordCypher   passwordHandler
+	passwordCypher   PasswordHandler
 	timeProvider     timeProvider
 	onSignUp         []OnSignUp
 	checkCredentials bool
 }
 
-func NewLocalProvider(api LocalAPI, checkCredentials bool, synchronizer AccountSynchronization, onSignUp []OnSignUp) *LocalProvider {
-	return &LocalProvider{
+type LocalProviderOptions func(provider *LocalProvider) error
+
+func PasswordRules(policy PasswordPolicy) LocalProviderOptions {
+	return func(provider *LocalProvider) error {
+		provider.passwordPolicy = policy
+		return nil
+	}
+}
+
+func PasswordCypher(cypher PasswordHandler) LocalProviderOptions {
+	return func(provider *LocalProvider) error {
+		provider.passwordCypher = cypher
+		return nil
+	}
+}
+
+func SkipCredentials() LocalProviderOptions {
+	return func(provider *LocalProvider) error {
+		provider.checkCredentials = false
+		return nil
+	}
+}
+
+func AfterSignUp(callbacks []OnSignUp) LocalProviderOptions {
+	return func(provider *LocalProvider) error {
+		provider.onSignUp = callbacks
+		return nil
+	}
+}
+
+func NewLocalProvider(api LocalAPI, synchronizer AccountSynchronization, opts ...LocalProviderOptions) (*LocalProvider, error) {
+	provider := &LocalProvider{
 		alias:            "local",
 		api:              api,
 		synchronizer:     synchronizer,
 		passwordPolicy:   NewBasicPasswordPolicy(),
 		passwordCypher:   NewBCRYPTHandler(),
 		timeProvider:     osTimeProvider,
-		onSignUp:         onSignUp,
-		checkCredentials: checkCredentials,
+		onSignUp:         []OnSignUp{},
+		checkCredentials: true,
 	}
+
+	for _, opt := range opts {
+		if err := opt(provider); err != nil {
+			return nil, err
+		}
+	}
+
+	return provider, nil
 }
 
-type passwordHandler interface {
+type PasswordHandler interface {
 	Make(password string) (result string, err error)
 	Compare(givenValue string, target string) (valid bool, err error)
 }
