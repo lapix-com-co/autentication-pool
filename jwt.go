@@ -255,17 +255,22 @@ func (p PascalDeKloeJWTHandler) Issue(input *IssueInput) (*IssueOutput, error) {
 }
 
 func (p PascalDeKloeJWTHandler) Verify(input *VerifyInput) (*VerifyOutput, error) {
-	var photo *string
 	claims, err := jwt.EdDSACheck([]byte(input.Token), p.publicKey)
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
 
-	if v, ok := claims.Set["photo"]; ok {
-		if s, vString := v.(string); vString {
-			photo = &s
-		}
+	var public PublicClaims
+	public.Name, _ = claims.String("name")
+	public.GivenName, _ = claims.String("given_name")
+	public.FamilyName, _ = claims.String("family_name")
+	public.Email, _ = claims.String("email")
+	public.EmailVerified, _ = claims.Set["email_verified"].(bool)
+	if s, ok := claims.String("photo"); ok {
+		public.Picture = &s
 	}
+	public.PhoneNumber, _ = claims.String("phone_number")
+	public.PhoneNumberVerified, _ = claims.Set["phone_number_verified"].(bool)
 
 	return &VerifyOutput{
 		ExpiredAt: claims.Expires.Time(),
@@ -275,17 +280,7 @@ func (p PascalDeKloeJWTHandler) Verify(input *VerifyInput) (*VerifyOutput, error
 			Audience:       claims.Audiences,
 			JsonWebTokenID: claims.ID,
 		},
-		PublicClaims: &PublicClaims{
-			Name:                 stringValue(claims.Set, "name"),
-			GivenName:            stringValue(claims.Set, "given_name"),
-			FamilyName:           stringValue(claims.Set, "family_name"),
-			Email:                stringValue(claims.Set, "email"),
-			EmailVerified:        boolValue(claims.Set, "email_verified"),
-			Picture:              photo,
-			PhoneNumber:          stringValue(claims.Set, "phone_number"),
-			PhoneNumberVerified:  boolValue(claims.Set, "phone_number_verified"),
-			AdditionalProperties: nil,
-		},
+		PublicClaims:  &public,
 		PrivateClaims: &PrivateClaims{},
 	}, nil
 }
@@ -373,24 +368,4 @@ func NewObscureTokenFromRawContent(token string) (*ObscureToken, error) {
 		content: parts[1],
 		subject: parts[2],
 	}, nil
-}
-
-func boolValue(input map[string]interface{}, key string) bool {
-	if v, ok := input[key]; ok {
-		if s, isBool := v.(bool); isBool {
-			return s
-		}
-	}
-
-	return false
-}
-
-func stringValue(input map[string]interface{}, key string) string {
-	if v, ok := input[key]; ok {
-		if s, isString := v.(string); isString {
-			return s
-		}
-	}
-
-	return ""
 }
